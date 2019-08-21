@@ -38,14 +38,20 @@ int main(int argc, char **argv) {
     (そのindexのbufに文字がなかったとしてもあるものとして)書き込んでしまうため
     余計なよくわからないものが書き込まれる可能性があるためyomikomiの
     文字数までに書き込み文字数を制限する必要がある。*/
-    int kakikomi = write(dest_fp, buf, yomikomi);
-    if (kakikomi == -1) {
-      if (errno == EINTR) {
-      } else {
-        perror("ファイルの書き込みに失敗しました。\n");
-        unlink(dest);
-        return 0;
+    const char *buf_sub = buf;
+    while (yomikomi > 0) {
+      int kakikomi = write(dest_fp, buf_sub, yomikomi);
+      //エラー処理
+      if (kakikomi == -1) {
+        if (errno == EINTR) {
+        } else {
+          perror("ファイルの書き込みに失敗しました。\n");
+          unlink(dest);
+          return 0;
+        }
       }
+      buf_sub += kakikomi;
+      yomikomi -= kakikomi;
     }
   }
   close(src_fp);
