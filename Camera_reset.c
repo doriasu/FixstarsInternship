@@ -54,7 +54,7 @@ int main(void) {
     perror("書き込みに失敗しました。\n");
     return 0;
   }
-  uint8_t kakikomi = 0xf3;
+  uint8_t kakikomi = 0x80;
   int kakikomi_er = spi_write(fd, 0, &kakikomi, 1);
   if (kakikomi_er == -1) {
     perror("書き込みに失敗しました。\n");
