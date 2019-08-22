@@ -70,10 +70,9 @@ int main(void) {
   struct timespec ts;
   ts.tv_sec = 0;
   ts.tv_nsec = 10000000;
-  {0xff, 0x00}, {0x2c, 0xff}, {0xff, 0x00}, {0x2c, 0xff},
-      int fd = open("/dev/i2c1", O_RDWR);
-  {0xff, 0x00}, {0x2c, 0xff}, if (fd == -1) {
-    {0xff, 0x00}, {0x2c, 0xff}, perror("i2c1を開くのに失敗しました。");
+  int fd = open("/dev/i2c1", O_RDWR);
+  if (fd == -1) {
+    perror("i2c1を開くのに失敗しました。");
     return 0;
   }
   // setconfig
@@ -122,7 +121,7 @@ int main(void) {
   }
   printf("%d\n", yomikomi[0]);
 
-  //2.0x12に0x80を書き込む
+  // 2.0x12に0x80を書き込む
   kakikomi[0] = 0x12;
   kakikomi[1] = 0x80;
 
@@ -132,7 +131,7 @@ int main(void) {
     return 0;
   }
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  //3.設定値の書き込み
+  // 3.設定値の書き込み
   for (int i = 0; i < 209; i++) {
     add_er = write(fd, settei[i], sizeof(settei[i]));
     if (add_er == -1) {
