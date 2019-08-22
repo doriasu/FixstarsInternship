@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#define _XTAL_FREQ 4000000
 //修正が必要
 /*void kakikomu(int *fd, uint8_t *address, uint8_t *atai) {
   int kakikomu_reg = spi_write(*fd, 0, address, 1);
@@ -41,7 +40,7 @@ int main(void) {
   //時間処理
   struct timespec ts;
   ts.tv_sec = 0;
-  ts.tv_nsec = 1e+8;
+  ts.tv_nsec = 100000000;
 
   int fd = spi_open("/dev/spi0");
   // setconfig
@@ -78,7 +77,7 @@ int main(void) {
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   // 5.レジスタ0x00に適当な値を書き込む
   kakikomi[0] = 0x80;
-  kakikomi[1] = 0x10;
+  kakikomi[1] = 0x0f;
   add_er = spi_write(fd, 0, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
     perror("書き込みに失敗しました。\n");
@@ -88,9 +87,9 @@ int main(void) {
   // 6.5.で書き込んだ値を読めるまで待ち、読む
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   //0x11はdummy
-  uint8_t reg[2] = {0x00,0x00};
+  uint8_t reg[2] = {0x00,0x11};
   uint8_t yomikomi[2];
-  if (spi_cmdread(fd, 0, reg, sizeof(reg), yomikomi, sizeof(yomikomi)) < 0) {
+  if (spi_xchange(fd, 0, reg, yomikomi, sizeof(yomikomi)) < 0) {
     perror("読み込みに失敗しました\n");
     return 0;
   }
