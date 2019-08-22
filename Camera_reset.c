@@ -7,7 +7,8 @@
 #include <time.h>
 #include <unistd.h>
 #define _XTAL_FREQ 4000000
-void kakikomu(int *fd, uint8_t *address, uint8_t *atai) {
+//修正が必要
+/*void kakikomu(int *fd, uint8_t *address, uint8_t *atai) {
   int kakikomu_reg = spi_write(*fd, 0, address, 1);
   if (kakikomu_reg == -1) {
     perror("レジスタの指定に失敗しました。\n");
@@ -34,7 +35,7 @@ int yomikomu(int *fd, uint8_t *address) {
     return -1;
   }
   return tmp;
-}
+}*/
 
 int main(void) {
   //時間処理
