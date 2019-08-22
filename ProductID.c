@@ -1,40 +1,14 @@
+#include <fcntl.h>
 #include <hw/i2c.h>
 #include <hw/inout.h>
 #include <hw/spi-master.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-//修正が必要
-/*void kakikomu(int *fd, uint8_t *address, uint8_t *atai) {
-  int kakikomu_reg = spi_write(*fd, 0, address, 1);
-  if (kakikomu_reg == -1) {
-    perror("レジスタの指定に失敗しました。\n");
-    return;
-  }
-  int kakikomu_val = spi_write(*fd, 0, atai, 1);
-  if (kakikomu_val == -1) {
-    perror("値の書き込みに失敗しました。\n");
-    return;
-  }
-  return;
-}
-
-int yomikomu(int *fd, uint8_t *address) {
-  int yomikomu_reg = spi_write(*fd, 0, address, 1);
-  if (yomikomu_reg == -1) {
-    perror("レジスタの指定に失敗しました。\n");
-    return -1;
-  }
-  int tmp = 0x00;
-  int yomikomu_val = spi_read(*fd, 0, &tmp, 1);
-  if (yomikomu_val == -1) {
-    perror("値の読み込みに失敗しました。\n");
-    return -1;
-  }
-  return tmp;
-}*/
 
 int main(void) {
   //設定値
@@ -96,10 +70,10 @@ int main(void) {
   struct timespec ts;
   ts.tv_sec = 0;
   ts.tv_nsec = 10000000;
-
-  int fd = spi_open("/dev/i2c1");
-  if(fd==-1){
-    perror("i2c1を開くのに失敗しました。");
+  {0xff, 0x00}, {0x2c, 0xff}, {0xff, 0x00}, {0x2c, 0xff},
+      int fd = open("/dev/i2c1", O_RDWR);
+  {0xff, 0x00}, {0x2c, 0xff}, if (fd == -1) {
+    {0xff, 0x00}, {0x2c, 0xff}, perror("i2c1を開くのに失敗しました。");
     return 0;
   }
   // setconfig
@@ -130,10 +104,10 @@ int main(void) {
   }
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
 
-  // 2.レジスタ0x0aから値を読みだす
-  uint8_t yomikomi_reg[1] = {0x0a};
+  // レジスタ0x0aから値を読みだす
+  uint8_t yomikomi_reg[1];
+  yomikomi_reg[0] = 0x0a;
   uint8_t yomikomi[1];
-
   add_er = write(fd, yomikomi_reg, sizeof(yomikomi_reg));
   if (add_er == -1) {
     perror("書き込みに失敗しました。\n");
@@ -148,5 +122,34 @@ int main(void) {
   }
   printf("%d\n", yomikomi[0]);
 
-  return 0;
+  //2.0x12に0x80を書き込む
+  kakikomi[0] = 0x12;
+  kakikomi[1] = 0x80;
+
+  add_er = write(fd, kakikomi, sizeof(kakikomi));
+  if (add_er == -1) {
+    perror("書き込みに失敗しました。\n");
+    return 0;
+  }
+  clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+  //3.設定値の書き込み
+  for (int i = 0; i < 209; i++) {
+    add_er = write(fd, settei[i], sizeof(settei[i]));
+    if (add_er == -1) {
+      perror("書き込みに失敗しました。\n");
+      return 0;
+    }
+  }
+  clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+  //画像のピクセルについての設定値の書き込み
+  for (int i = 0; i < 40; i++) {
+    add_er = write(fd, gazou[i], sizeof(gazou[i]));
+    if (add_er == -1) {
+      perror("書き込みに失敗しました。\n");
+      return 0;
+    }
+  }
+  int close_er = close(fd);
+
+  return close_er;
 }

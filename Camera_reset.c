@@ -94,6 +94,6 @@ int main(void) {
     return 0;
   }
   printf("%d\n", yomikomi[1]);
-
-  return 0;
+  int fd_close=spi_close(fd);
+  return fd_close;
 }
