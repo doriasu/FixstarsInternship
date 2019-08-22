@@ -55,63 +55,45 @@ int main(void) {
     return 0;
   }
   // 1.レジスタ0x07に0x80を書き込む
-  uint8_t add = 0x87;
-  int add_er = spi_write(fd, 0, &add, 1);
+  uint8_t kakikomi[2] = {0x87, 0x80};
+  int add_er = spi_write(fd, 0, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
     perror("書き込みに失敗しました。\n");
     return 0;
   }
-  uint8_t kakikomi = 0x80;
-  int kakikomi_er = spi_write(fd, 0, &kakikomi, 1);
-  if (kakikomi_er == -1) {
-    perror("書き込みに失敗しました。\n");
-    return 0;
-  }
+
   // 2.100msまつ
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   // 3.レジスタ0x07に0x00を書き込む
-  add = 0x87;
-  add_er = spi_write(fd, 0, &add, 1);
+  kakikomi[0] = 0x87;
+  kakikomi[1] = 0x00;
+  add_er = spi_write(fd, 0, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
     perror("書き込みに失敗しました。\n");
     return 0;
   }
-  kakikomi = 0x00;
-  kakikomi_er = spi_write(fd, 0, &kakikomi, 1);
-  if (kakikomi_er == -1) {
-    perror("書き込みに失敗しました。\n");
-    return 0;
-  }
+
   // 4.100msまつ
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   // 5.レジスタ0x00に適当な値を書き込む
-  add = 0x80;
-  add_er = spi_write(fd, 0, &add, 1);
+  kakikomi[0] = 0x80;
+  kakikomi[1] = 0x10;
+  add_er = spi_write(fd, 0, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
     perror("書き込みに失敗しました。\n");
     return 0;
   }
-  kakikomi = 0x55;
-  kakikomi_er = spi_write(fd, 0, &kakikomi, 1);
-  if (kakikomi_er == -1) {
-    perror("書き込みに失敗しました。\n");
-    return 0;
-  }
+
   // 6.5.で書き込んだ値を読めるまで待ち、読む
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-  add = 0x00;
-  add_er = spi_write(fd, 0, &add, 1);
-  if (add_er == -1) {
-    perror("書き込みに失敗しました。\n");
+  //0x11はdummy
+  uint8_t reg[2] = {0x00,0x00};
+  uint8_t yomikomi[2];
+  if (spi_cmdread(fd, 0, reg, sizeof(reg), yomikomi, sizeof(yomikomi)) < 0) {
+    perror("読み込みに失敗しました\n");
     return 0;
   }
-  uint8_t yomikomi;
-  int yomikomi_er = spi_read(fd, 0, &yomikomi, 1);
-  if (yomikomi_er == -1) {
-    perror("読み込みに失敗しました。\n");
-    return 0;
-  }
-  printf("%d\n", yomikomi);
+  printf("%d\n", yomikomi[1]);
 
   return 0;
 }
