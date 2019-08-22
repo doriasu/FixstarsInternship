@@ -65,7 +65,7 @@ int main(void) {
   // 1.レジスタ0xffに0x01を書き込む
   uint8_t kakikomi[3] = {0x60, 0xff, 0x01};
   for (int i = 0; i < 3; i++) {
-    int add_er = write(fd, &kakikomi[i], sizeof(1));
+    int add_er = write(fd, &kakikomi[i],1);
     if (add_er == -1) {
       perror("書き込みに失敗しました。\n");
       return 0;
@@ -73,10 +73,11 @@ int main(void) {
     clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   }
 
+  //2.レジスタ0x0bから値を読みだす
   uint8_t yomikomi_reg[3] = {0x60, 0x0b, 0x61};
   uint8_t yomikomi[1];
   for (int i = 0; i < 3; i++) {
-    int add_er = write(fd, yomikomi_reg, sizeof(yomikomi_reg));
+    int add_er = write(fd, &yomikomi_reg[i], 1);
     if (add_er == -1) {
       perror("書き込みに失敗しました。\n");
       return 0;
