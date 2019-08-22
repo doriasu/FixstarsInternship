@@ -70,17 +70,56 @@ int main(void) {
   struct timespec ts;
   ts.tv_sec = 0;
   ts.tv_nsec = 10000000;
-  int fd = open("/dev/i2c1", O_RDWR);
+  //SPIパート
+  // setconfig
+  int fd = spi_open("/dev/spi0");
+  uint32_t bits_per_word = SPI_MODE_CHAR_LEN_MASK & 8;
+  spi_cfg_t cfg = {
+      .mode = bits_per_word | SPI_MODE_BODER_MSB,
+      .clock_rate = 4 * 1000 * 1000,  // 4MHz
+  };
+  int cfg_err = spi_setcfg(fd, 0, &cfg);
+  if (cfg_err != EOK) {
+    perror("接続に失敗しました\n");
+    return 0;
+  }
+  // 1.レジスタ0x07に0x80を書き込む
+  uint8_t kakikomi[2] = {0x87, 0x80};
+  int add_er = spi_write(fd, 0, kakikomi, sizeof(kakikomi));
+  if (add_er == -1) {
+    perror("書き込みに失敗しました。\n");
+    return 0;
+  }
+
+  // 2.100msまつ
+  clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+  // 3.レジスタ0x07に0x00を書き込む
+  kakikomi[0] = 0x87;
+  kakikomi[1] = 0x00;
+  add_er = spi_write(fd, 0, kakikomi, sizeof(kakikomi));
+  if (add_er == -1) {
+    perror("書き込みに失敗しました。\n");
+    return 0;
+  }
+
+  // 4.100msまつ
+  clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+
+
+
+
+  //I2Cパート
+  // setconfig
+   fd = open("/dev/i2c1", O_RDWR);
   if (fd == -1) {
     perror("i2c1を開くのに失敗しました。");
     return 0;
   }
-  // setconfig
   i2c_addr_t addr = {
       .addr = 0x30,
       .fmt = I2C_ADDRFMT_7BIT,
   };
-  int cfg_err = devctl(fd, DCMD_I2C_SET_SLAVE_ADDR, &addr, sizeof(addr), NULL);
+  cfg_err = devctl(fd, DCMD_I2C_SET_SLAVE_ADDR, &addr, sizeof(addr), NULL);
 
   if (cfg_err != EOK) {
     perror("接続に失敗しました\n");
@@ -94,9 +133,10 @@ int main(void) {
   }
 
   // 1.レジスタ0xffに0x01を書き込む
-  uint8_t kakikomi[2] = {0xff, 0x01};
+   kakikomi[0] =0xff;
+   kakikomi[1]=0x01;
 
-  int add_er = write(fd, kakikomi, sizeof(kakikomi));
+   add_er = write(fd, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
     perror("書き込みに失敗しました。\n");
     return 0;
