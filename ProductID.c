@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -70,7 +71,7 @@ int main(void) {
   struct timespec ts;
   ts.tv_sec = 0;
   ts.tv_nsec = 10000000;
-  //SPIパート
+  // SPIパート
   // setconfig
   int fd = spi_open("/dev/spi0");
   uint32_t bits_per_word = SPI_MODE_CHAR_LEN_MASK & 8;
@@ -105,61 +106,82 @@ int main(void) {
   // 4.100msまつ
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
 
-
-
-
-  //I2Cパート
+  // I2Cパート
   // setconfig
-   fd = open("/dev/i2c1", O_RDWR);
+  fd = open("/dev/i2c1", O_RDWR);
   if (fd == -1) {
     perror("i2c1を開くのに失敗しました。");
     return 0;
   }
-  i2c_addr_t addr = {
-      .addr = 0x30,
-      .fmt = I2C_ADDRFMT_7BIT,
-  };
-  cfg_err = devctl(fd, DCMD_I2C_SET_SLAVE_ADDR, &addr, sizeof(addr), NULL);
-
-  if (cfg_err != EOK) {
-    perror("接続に失敗しました\n");
-    return 0;
-  }
-  uint32_t speed = I2C_SPEED_STANDARD;  // 100kbps
-  cfg_err = devctl(fd, DCMD_I2C_SET_BUS_SPEED, &speed, sizeof(speed), NULL);
-  if (cfg_err != EOK) {
-    perror("接続に失敗しました\n");
-    return 0;
-  }
-
+  
   // 1.レジスタ0xffに0x01を書き込む
-   kakikomi[0] =0xff;
-   kakikomi[1]=0x01;
+  kakikomi[0] = 0xff;
+  kakikomi[1] = 0x01;
 
-   add_er = write(fd, kakikomi, sizeof(kakikomi));
-  if (add_er == -1) {
-    perror("書き込みに失敗しました。\n");
+  i2c_send_t *buf = malloc(sizeof(i2c_send_t) + sizeof(kakikomi));
+  if (!buf) {
+    perror("書き込みに失敗しました.\n");
     return 0;
   }
+  buf->slave.addr = 0x30;
+  buf->slave.fmt = I2C_ADDRFMT_7BIT;
+  buf->len = sizeof(kakikomi);
+  buf->stop = 1;  // 0 にするとトランザクション継続
+  memcpy((char *)buf + sizeof(i2c_send_t), kakikomi, sizeof(kakikomi));
+  int err = devctl(fd, DCMD_I2C_SEND, buf,
+                   sizeof(i2c_send_t) + sizeof(kakikomi), NULL);
+  free(buf);
+  if (err != EOK) {
+    perror("書き込みに失敗しました\n");
+    return 0;
+  }
+
   clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
 
-  // レジスタ0x0aから値を読みだす
+  // レジスタ0x0aから値を読みだすために0x0aを書き込む
   uint8_t yomikomi_reg[1];
   yomikomi_reg[0] = 0x0a;
   uint8_t yomikomi[1];
-  add_er = write(fd, yomikomi_reg, sizeof(yomikomi_reg));
-  if (add_er == -1) {
-    perror("書き込みに失敗しました。\n");
+  
+  buf = malloc(sizeof(i2c_send_t) + sizeof(yomikomi_reg));
+  if (!buf) {
+    perror("書き込みに失敗しました.\n");
     return 0;
   }
-  clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+  buf->slave.addr = 0x30;
+  buf->slave.fmt = I2C_ADDRFMT_7BIT;
+  buf->len = sizeof(yomikomi_reg);
+  buf->stop = 1;  // 0 にするとトランザクション継続
+  memcpy((char *)buf + sizeof(i2c_send_t), yomikomi_reg, sizeof(yomikomi_reg));
+  err = devctl(fd, DCMD_I2C_SEND, buf,
+               sizeof(i2c_send_t) + sizeof(yomikomi_reg), NULL);
+  free(buf);
+  if (err != EOK) {
+    perror("書き込みに失敗しました\n");
+    return 0;
+  }
 
-  int read_er = read(fd, yomikomi, sizeof(yomikomi));
-  if (read_er == -1) {
-    perror("読み込みに失敗しました。\n");
+  clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+  //実際に読みだす
+
+  buf = malloc(sizeof(i2c_recv_t) + sizeof(yomikomi));
+  if (!buf) {
+    perror("読み込みに失敗しました\n");
     return 0;
   }
-  printf("%d\n", yomikomi[0]);
+  buf->slave.addr = 0x30;
+  buf->slave.fmt = I2C_ADDRFMT_7BIT;
+  buf->len = sizeof(yomikomi);
+  buf->stop = 1;  // 0 にするとトランザクション継続
+  err = devctl(fd, DCMD_I2C_RECV, buf, sizeof(i2c_recv_t) + sizeof(yomikomi),
+               NULL);
+  if (err != EOK) {
+    perror("読み込みに失敗しました\n");
+    return 0;
+  }
+  char *data = (char *)buf + sizeof(i2c_recv_t);
+  printf("%d\n", data[0]);
+  free(buf);
 
   // 2.0x12に0x80を書き込む
   kakikomi[0] = 0x12;
