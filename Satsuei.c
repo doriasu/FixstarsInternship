@@ -151,10 +151,11 @@ int main(int argc, char **argv) {
   uint8_t **gazou;
   if (argc == 3) {
     if(strcmp(argv[2],"160*120")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_160)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_160)/2);
+      for(int i=0;i<(int)sizeof(gazou_160)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
+      
       for(int i=0;i<(int)sizeof(gazou_160)/2;i++){
         for(int j=0;j<2;j++){
           gazou[i][j]=gazou_160[i][j];
@@ -163,9 +164,9 @@ int main(int argc, char **argv) {
 
 
     }else if(strcmp(argv[2],"176*144")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_176)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_176)/2);
+      for(int i=0;i<(int)sizeof(gazou_176)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_176)/2;i++){
         for(int j=0;j<2;j++){
@@ -174,9 +175,9 @@ int main(int argc, char **argv) {
       }
 
     }else if(strcmp(argv[2],"320*240")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_320)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_320)/2);
+      for(int i=0;i<(int)sizeof(gazou_320)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_320)/2;i++){
         for(int j=0;j<2;j++){
@@ -185,9 +186,9 @@ int main(int argc, char **argv) {
       }
 
     }else if(strcmp(argv[2],"352*288")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_352)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_352)/2);
+      for(int i=0;i<(int)sizeof(gazou_352)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_352)/2;i++){
         for(int j=0;j<2;j++){
@@ -196,9 +197,9 @@ int main(int argc, char **argv) {
       }
 
     }else if(strcmp(argv[2],"640*480")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_640)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_640)/2);
+      for(int i=0;i<(int)sizeof(gazou_640)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_640)/2;i++){
         for(int j=0;j<2;j++){
@@ -207,9 +208,9 @@ int main(int argc, char **argv) {
       }
 
     }else if(strcmp(argv[2],"800*600")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_800)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_800)/2);
+      for(int i=0;i<(int)sizeof(gazou_800)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_800)/2;i++){
         for(int j=0;j<2;j++){
@@ -218,9 +219,9 @@ int main(int argc, char **argv) {
       }
 
     }else if(strcmp(argv[2],"1024*768")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_1024)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_1024)/2);
+      for(int i=0;i<(int)sizeof(gazou_1024)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_1024)/2;i++){
         for(int j=0;j<2;j++){
@@ -229,9 +230,9 @@ int main(int argc, char **argv) {
       }
 
     }else if(strcmp(argv[2],"1280*1024")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_1280)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_1280)/2);
+      for(int i=0;i<(int)sizeof(gazou_1280)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_1280)/2;i++){
         for(int j=0;j<2;j++){
@@ -241,9 +242,9 @@ int main(int argc, char **argv) {
 
 
     }else if(strcmp(argv[2],"1600*1200")==0){
-      gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_1600)/2);
-      for(int i=0;i<(int)sizeof(gazou);i++){
-        gazou[i]=malloc(sizeof(uint8_t)*2);
+      gazou=(uint8_t**)malloc(sizeof(uint8_t*)*sizeof(gazou_1600)/2);
+      for(int i=0;i<(int)sizeof(gazou_1600)/2;i++){
+        gazou[i]=(uint8_t*)malloc(sizeof(uint8_t)*2);
       }
       for(int i=0;i<(int)sizeof(gazou_1600)/2;i++){
         for(int j=0;j<2;j++){
@@ -252,9 +253,25 @@ int main(int argc, char **argv) {
       }
 
     }else{
-      perror("その解像度は存在しません。\n");
+      printf("その解像度は存在しません。\n");
       return 0;
     }
+  }else if(argc==2){
+    printf("デフォルト解像度640*480で実行します。\n");
+    gazou=malloc(sizeof(uint8_t*)*sizeof(gazou_640)/2);
+      for(int i=0;i<(int)sizeof(gazou_640)/2;i++){
+        gazou[i]=malloc(sizeof(uint8_t)*2);
+      }
+      for(int i=0;i<(int)sizeof(gazou_640)/2;i++){
+        for(int j=0;j<2;j++){
+          gazou[i][j]=gazou_640[i][j];
+        }
+      }
+
+
+  }else{
+    printf("<コマンド> <ファイル名> <解像度>で実行してください。\n");
+    return 0;
   }
 
   //時間処理
@@ -429,7 +446,7 @@ int main(int argc, char **argv) {
   }
   printf("%d\n", l);
   //ファイル書き出し
-  char *dest = "sample.jpg";
+  char *dest = argv[1];
 //O_TRUNCを入れると削除操作が要らなくなる
   int dest_fp = open(dest, O_WRONLY | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
   if (dest_fp < 0) {
