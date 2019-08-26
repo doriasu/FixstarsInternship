@@ -21,6 +21,10 @@ int main(void) {
   struct _msg_info info;
   while (1) {
     int rcvid = MsgReceive(chid, &tmp, sizeof(tmp), &info);
+    if(rcvid==0){
+      printf("パルスを受信したのでアプリケーションを終了します。\n");
+      return 0;
+    }
     if (rcvid == -1) {
       perror("受信に失敗しました。");
       ChannelDestroy(chid);

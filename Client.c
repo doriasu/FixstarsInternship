@@ -44,7 +44,15 @@ int main(int argc, char** argv) {
     return 0;
   }
   struct resulter ans;
-  
+  //この条件文だとうえですでに弾かれているのでちゃう気がする
+  //gitのissuesにかいてあるmsgは冒頭に_pulseが来ているが、_pulseの冒頭にはtypeがしっかり来ているのでアプリケーション間通信上のルールは守られる
+  if(argc!=5){
+    printf("引数は2つの100より小さい整数とpidとchidです\n");
+    struct _pulse err;
+    err.code=pulse_code;
+    //0でいいのか???
+    MsgSendPulse(coid,sched_get_priority_max(SCHED_FIFO),err.code,0);
+  }
   int send_err = MsgSend(coid, &serv, sizeof(serv), &ans, sizeof(ans));
   if (send_err < 0 ) {
     perror("正しい値(100以下)を入力してください\n");
