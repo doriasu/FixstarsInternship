@@ -148,42 +148,42 @@ int main(int argc, char **argv) {
       {0x52, 0x2c}, {0x53, 0x00}, {0x54, 0x00}, {0x55, 0x88}, {0x57, 0x00},
       {0x5a, 0x90}, {0x5b, 0x2C}, {0x5c, 0x05}, {0xd3, 0x02}, {0xe0, 0x00}};
   //コマンド処理
-  uint8_t (*kaizoudo)[2];
+  uint8_t(*kaizoudo)[2];
   int kaizoudo_size = 0;
   if (argc == 3) {
     if (strcmp(argv[2], "160*120") == 0) {
-      kaizoudo=gazou_160;
-      kaizoudo_size=sizeof(gazou_160);
+      kaizoudo = gazou_160;
+      kaizoudo_size = sizeof(gazou_160);
 
     } else if (strcmp(argv[2], "176*144") == 0) {
-      kaizoudo=gazou_176;
-      kaizoudo_size=sizeof(gazou_176);
+      kaizoudo = gazou_176;
+      kaizoudo_size = sizeof(gazou_176);
     } else if (strcmp(argv[2], "320*240") == 0) {
-      kaizoudo=gazou_320;
-      kaizoudo_size=sizeof(gazou_320);
+      kaizoudo = gazou_320;
+      kaizoudo_size = sizeof(gazou_320);
     } else if (strcmp(argv[2], "352*288") == 0) {
-      kaizoudo=gazou_352;
-      kaizoudo_size=sizeof(gazou_352);
+      kaizoudo = gazou_352;
+      kaizoudo_size = sizeof(gazou_352);
 
     } else if (strcmp(argv[2], "640*480") == 0) {
-      kaizoudo=gazou_640;
-      kaizoudo_size=sizeof(gazou_640);
+      kaizoudo = gazou_640;
+      kaizoudo_size = sizeof(gazou_640);
 
     } else if (strcmp(argv[2], "800*600") == 0) {
-      kaizoudo=gazou_800;
-      kaizoudo_size=sizeof(gazou_800);
+      kaizoudo = gazou_800;
+      kaizoudo_size = sizeof(gazou_800);
 
     } else if (strcmp(argv[2], "1024*768") == 0) {
-      kaizoudo=gazou_1024;
-      kaizoudo_size=sizeof(gazou_1024);
+      kaizoudo = gazou_1024;
+      kaizoudo_size = sizeof(gazou_1024);
 
     } else if (strcmp(argv[2], "1280*1024") == 0) {
-      kaizoudo=gazou_1280;
-      kaizoudo_size=sizeof(gazou_1280);
+      kaizoudo = gazou_1280;
+      kaizoudo_size = sizeof(gazou_1280);
 
     } else if (strcmp(argv[2], "1600*1200") == 0) {
-      kaizoudo=gazou_1600;
-      kaizoudo_size=sizeof(gazou_1600);
+      kaizoudo = gazou_1600;
+      kaizoudo_size = sizeof(gazou_1600);
 
     } else {
       printf("その解像度は存在しません。\n");
@@ -191,8 +191,8 @@ int main(int argc, char **argv) {
     }
   } else if (argc == 2) {
     printf("デフォルト解像度640*480で実行します。\n");
-    kaizoudo=gazou_640;
-      kaizoudo_size=sizeof(gazou_640);
+    kaizoudo = gazou_640;
+    kaizoudo_size = sizeof(gazou_640);
 
   } else {
     printf("<コマンド> <ファイル名> <解像度>で実行してください。\n");
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
   int fd_spi = spi_open("/dev/spi0");
   uint32_t bits_per_word = SPI_MODE_CHAR_LEN_MASK & 8;
   spi_cfg_t cfg = {
-      .mode = bits_per_word | SPI_MODE_BODER_MSB,
+      .mode = bits_per_word | SPI_MODE_BODER_MSB | SPI_MODE_CKPOL_HIGH,
       .clock_rate = 4 * 1000 * 1000,  // 4MHz
   };
   int cfg_err = spi_setcfg(fd_spi, 0, &cfg);
@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
   kakikomi[1] = 0x01;
   add_er = spi_write(fd_spi, 0, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
-    perror("書き込みに失敗しましたa。\n");
+    perror("書き込みに失敗しました。\n");
     return 0;
   }
   clock_nanosleep(CLOCK_MONOTONIC, 0,
@@ -325,7 +325,7 @@ int main(int argc, char **argv) {
   kakikomi[1] = 0x02;
   add_er = spi_write(fd_spi, 0, kakikomi, sizeof(kakikomi));
   if (add_er == -1) {
-    perror("書き込みに失敗しましたb。\n");
+    perror("書き込みに失敗しました。\n");
     return 0;
   }
   //撮影完了か調べる
@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
   while ((yomikomi[1] & 8) == 0) {
     uint8_t reg[2] = {0x41, 0x11};
     if (spi_xchange(fd_spi, 0, reg, yomikomi, sizeof(yomikomi)) < 0) {
-      perror("読み込みに失敗しました\n");
+      perror("読み込みに失敗しましたa\n");
       return 0;
     }
   }
@@ -346,17 +346,17 @@ int main(int argc, char **argv) {
   uint8_t reg_44[2];
   uint8_t reg[2] = {0x42, 0x11};
   if (spi_xchange(fd_spi, 0, reg, reg_42, sizeof(reg_42)) < 0) {
-    perror("読み込みに失敗しました\n");
+    perror("読み込みに失敗しましたb\n");
     return 0;
   }
   reg[0] = 0x43;
   if (spi_xchange(fd_spi, 0, reg, reg_43, sizeof(reg_43)) < 0) {
-    perror("読み込みに失敗しました\n");
+    perror("読み込みに失敗しましたc\n");
     return 0;
   }
   reg[0] = 0x44;
   if (spi_xchange(fd_spi, 0, reg, reg_44, sizeof(reg_44)) < 0) {
-    perror("読み込みに失敗しました\n");
+    perror("読み込みに失敗しましたd\n");
     return 0;
   }
   //最上位ビットの読み捨て(そういう仕様)
@@ -369,10 +369,10 @@ int main(int argc, char **argv) {
   int l;
   if ((l = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso, sizeof(gaso))) <
       0) {
-    perror("読み込みに失敗しました\n");
+    perror("読み込みに失敗しましたe\n");
     return 0;
   }
-  
+
   printf("%d\n", l);
   //ファイル書き出し
   char *dest = argv[1];
@@ -441,7 +441,7 @@ char *i2c_read(int fd, uint32_t addr, const void *yomikomi_reg, size_t len) {
   uint8_t yomikomi[1];
   i2c_recv_t *buf_rec = malloc(sizeof(i2c_recv_t) + sizeof(yomikomi));
   if (!buf_rec) {
-    perror("読み込みに失敗しました\n");
+    perror("読み込みに失敗しましたf\n");
     return err;
   }
   buf_rec->slave.addr = addr;
@@ -451,7 +451,7 @@ char *i2c_read(int fd, uint32_t addr, const void *yomikomi_reg, size_t len) {
   int err_dev = devctl(fd, DCMD_I2C_RECV, buf_rec,
                        sizeof(i2c_recv_t) + sizeof(yomikomi), NULL);
   if (err_dev != EOK) {
-    perror("読み込みに失敗しました\n");
+    perror("読み込みに失敗しましたg\n");
     return err;
   }
   char *data = (char *)buf_rec + sizeof(i2c_recv_t);
