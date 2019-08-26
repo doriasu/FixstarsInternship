@@ -1,12 +1,4 @@
-#include <errno.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/iomsg.h>
-#include <sys/netmgr.h>
-#include <sys/neutrino.h>
-#include <unistd.h>
-
+#include "header.h"
 struct adder {
   uint16_t types;
   int a;
@@ -17,6 +9,10 @@ struct resulter {
 };
 
 int main(int argc, char** argv) {
+  if(argc!=5){
+    printf("引数は<足す数その1><足す数その2><pid><chid>です。正しく入力してください。");
+    return 0;
+  }
   struct adder serv;
   uint16_t message_code = _IO_MAX + 1;
   char* endptr;
@@ -43,7 +39,12 @@ int main(int argc, char** argv) {
   }
   //接続
   int coid = ConnectAttach(ND_LOCAL_NODE, pid, chid, _NTO_SIDE_CHANNEL, 0);
+  if(coid==-1){
+    perror("サーバーとの接続に失敗しました\n");
+    return 0;
+  }
   struct resulter ans;
+  
   int send_err = MsgSend(coid, &serv, sizeof(serv), &ans, sizeof(ans));
   if (send_err < 0 ) {
     perror("正しい値(100以下)を入力してください\n");
@@ -53,5 +54,5 @@ int main(int argc, char** argv) {
   printf("合計値:%d\n", ans.ans);
   ConnectDetach(coid);
   return 0;
-  
+
 }
