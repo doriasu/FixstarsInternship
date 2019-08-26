@@ -1,3 +1,4 @@
+all:Client Server
 Client:Client.c
 	ntoarmv7-gcc -o Client -Wall -Wextra -pedantic-errors Client.c -lspi-master
 Server:Server.c
