@@ -17,7 +17,7 @@ int main(void) {
 
   int destroy_err;
   while (1) {
-    struct add_pulse msg;
+    union add_pulse msg;
     struct resulter ans;
     struct _msg_info info;
     int rcvid = MsgReceive(chid, &msg, sizeof(msg), &info);
