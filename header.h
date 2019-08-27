@@ -4,8 +4,8 @@
 #include <sys/netmgr.h>
 #include <sys/neutrino.h>
 
-#define pulse_code _PULSE_CODE_MINAVAIL+1
-#define message_code _IO_MAX + 1
+#define PULSE_CODE _PULSE_CODE_MINAVAIL+1
+#define MESSAGE_CODE _IO_MAX + 1
 
 struct adder {
   int a;
@@ -14,7 +14,7 @@ struct adder {
 struct resulter {
   int ans;
 };
-union add_pulse{
+struct add_pulse{
     struct _pulse pulse;
     struct adder add;
   };

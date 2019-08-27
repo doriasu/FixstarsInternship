@@ -8,32 +8,22 @@
 #include <sys/neutrino.h>
 #include <unistd.h>
 #include "header.h"
-
+void send_pulse(int coid);
 int main(int argc, char** argv) {
   if (argc != 5) {
     printf(
-        "引数は<足す数その1><足す数その2><pid><chid>"
+        "引数は<pid><chid><足す数その１><足す数その2>"
         "です。正しく入力してください。\n");
   }
-  union add_pulse msg;
+  struct add_pulse msg;
   char* endptr;
-  msg.pulse.type = message_code;
-  msg.add.a = strtoul(argv[1], &endptr, 10);
-  if (*endptr != '\0') {
-    perror("100までの数字を2つ入力してください。\n");
-    return 0;
-  }
-  msg.add.b = strtoul(argv[2], &endptr, 10);
-  if (*endptr != '\0') {
-    perror("100までの数字を2つ入力してください。\n");
-    return 0;
-  }
-  pid_t pid = strtoul(argv[3], &endptr, 10);
+  msg.pulse.type = MESSAGE_CODE;
+  pid_t pid = strtoul(argv[1], &endptr, 10);
   if (*endptr != '\0') {
     perror("pidを入力してください。\n");
     return 0;
   }
-  int chid = strtoul(argv[4], &endptr, 10);
+  int chid = strtoul(argv[2], &endptr, 10);
   if (*endptr != '\0') {
     perror("chidを入力してください。\n");
     return 0;
@@ -45,20 +35,22 @@ int main(int argc, char** argv) {
     return 0;
   }
   struct resulter ans;
-  
-  if (argc != 5) {
-    printf("引数は2つの100より小さい整数とpidとchidです\n");
-    struct _pulse err;
-    err.code = pulse_code;
-    err.type=message_code;
-    // 0でいいのか???
-    int pulse_err =
-        MsgSendPulse(coid, sched_get_priority_max(SCHED_FIFO), err.code, 0);
-    if (pulse_err == -1) {
-      perror("パルスの送信に失敗しました。\n");
-      return 0;
-    }
+  msg.add.a = strtoul(argv[3], &endptr, 10);
+  if (*endptr != '\0') {
+    perror("100までの数字を2つ入力してください。\n");
+    //パルスを送る処理
+    send_pulse(coid);
+    return 0;
   }
+  msg.add.b = strtoul(argv[4], &endptr, 10);
+  if (*endptr != '\0') {
+    perror("100までの数字を2つ入力してください。\n");
+    //パルスを送る処理
+    send_pulse(coid);
+    return 0;
+  }
+
+  
   int send_err = MsgSend(coid, &msg, sizeof(msg), &ans, sizeof(ans));
   int detach_err;
   if (send_err < 0) {
@@ -75,4 +67,17 @@ int main(int argc, char** argv) {
     perror("通信の切断に失敗しました。\n");
   }
   return 0;
+}
+void send_pulse(int coid){
+  struct _pulse err;
+    err.code = PULSE_CODE;
+    err.type = MESSAGE_CODE;
+    // 0でいいのか???
+    int pulse_err =
+        MsgSendPulse(coid, sched_get_priority_max(SCHED_FIFO), err.code, 0);
+    if (pulse_err == -1) {
+      perror("パルスの送信に失敗しました。\n");
+      
+    }
+
 }
