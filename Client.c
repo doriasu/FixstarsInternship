@@ -3,9 +3,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/iomsg.h>
-#include <sys/netmgr.h>
-#include <sys/neutrino.h>
 #include <unistd.h>
 #include "header.h"
 void send_pulse(int coid);
@@ -72,7 +69,6 @@ void send_pulse(int coid){
   struct _pulse err;
     err.code = PULSE_CODE;
     err.type = MESSAGE_CODE;
-    // 0でいいのか???
     int pulse_err =
         MsgSendPulse(coid, sched_get_priority_max(SCHED_FIFO), err.code, 0);
     if (pulse_err == -1) {

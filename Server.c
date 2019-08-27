@@ -3,9 +3,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/iomsg.h>
-#include <sys/netmgr.h>
-#include <sys/neutrino.h>
 #include <unistd.h>
 #include "header.h"
 
@@ -37,7 +34,6 @@ int main(void) {
       perror("受信に失敗しました。");
       continue;
     }
-    printf("%u\n", (unsigned int)msg.pulse.type);
     if (msg.pulse.type != MESSAGE_CODE) {
       printf("正しい接続を確立できませんでした。\n");
       continue;
