@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   }
   union add_pulse msg;
   char* endptr;
-  msg.pulse.type = MESSAGE_CODE;
+  msg.add.type = MESSAGE_CODE;
   pid_t pid = strtoul(argv[1], &endptr, 10);
   if (*endptr != '\0') {
     perror("pidを入力してください。\n");
@@ -61,11 +61,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 void send_pulse(int coid) {
-  struct _pulse err;
-  err.code = PULSE_CODE;
-  err.type = MESSAGE_CODE;
   int pulse_err =
-      MsgSendPulse(coid, sched_get_priority_max(SCHED_FIFO), err.code, 0);
+      MsgSendPulse(coid, sched_get_priority_max(SCHED_FIFO), PULSE_CODE, 0);
   if (pulse_err == -1) {
     perror("パルスの送信に失敗しました。\n");
   }

@@ -34,7 +34,7 @@ int main(void) {
       perror("受信に失敗しました。");
       continue;
     }
-    if (msg.pulse.type != MESSAGE_CODE) {
+    if (msg.add.type != MESSAGE_CODE) {
       printf("正しい接続を確立できませんでした。\n");
       continue;
     }
