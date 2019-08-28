@@ -3,15 +3,17 @@
 #include <sys/dispatch.h>
 #include <sys/iofunc.h>
 #include <sys/resmgr.h>
-
+#include<stdlib.h>
+#include "header.h"
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
+int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
 int main(void) {
   //ディスパッチ構造体の作成と各種変数の定義
   dispatch_t *dpp;
-  dispatch_context_t *ctp,*new_ctp;
+  dispatch_context_t *ctp, *new_ctp;
   iofunc_attr_t my_attr_t;
   resmgr_connect_funcs_t my_connect_functions;
   resmgr_io_funcs_t my_io_functions;
@@ -40,25 +42,32 @@ int main(void) {
     return 0;
   }
   ctp = dispatch_context_alloc(dpp);
+  //メッセージの待受と処理
   while (1) {
+    //パルスの処理
+    int code = pulse_attach(dpp, MSG_FLAG_ALLOC_PULSE, PULSE_CODE, &my_func, NULL);
+    if (code == -1) {
+      perror("パルスの処理に失敗しました。");
+      return 0;
+    } 
     new_ctp = dispatch_block(ctp);
-    if(new_ctp){
-        ctp=new_ctp;
-    }else{
-        perror("メッセージの待受に失敗しました。\n");
-        return 0;
+    if (new_ctp) {
+      ctp = new_ctp;
+    } else {
+      perror("メッセージの待受に失敗しました。\n");
+      return 0;
     }
-    int handle_err=dispatch_handler(ctp);
-    if(handle_err==-1){
-        perror("メッセージの処理に失敗しました。\n");
-        return 0;
+    int handle_err = dispatch_handler(ctp);
+    if (handle_err == -1) {
+      perror("メッセージの処理に失敗しました。\n");
+      return 0;
     }
-
   }
+  return 0;
 }
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra) {
-                printf("openしたよ\n");
+  printf("openしたよ\n");
   return iofunc_open_default(ctp, msg, handle, extra);
 }
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
@@ -98,4 +107,11 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
   printf("writeしたよ\n");
 
   return _RESMGR_NPARTS(0);
+}
+int my_func(message_context_t *ctp, int code, unsigned flags, void *handle){
+  if(code==PULSE_CODE){
+    printf("指定されたパルスを取得したのでアプリケーションを終了します\n");
+    exit(0);
+  }
+  return 0;
 }
