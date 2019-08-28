@@ -1,17 +1,17 @@
 #include <errno.h>
-#include<stdio.h>
+#include <stdio.h>
 #include <sys/dispatch.h>
 #include <sys/iofunc.h>
 #include <sys/resmgr.h>
 
-int io_open(resmgr_context_t *ctp, io_open_t *msg,RESMGR_HANDLE_T *handle,void*extra);
+int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
+            void *extra);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int main(void) {
   //ディスパッチ構造体の作成と各種変数の定義
   dispatch_t *dpp;
-  dispatch_context_t *ctp;
-  resmgr_context_t ctp_res;
+  dispatch_context_t *ctp,*new_ctp;
   iofunc_attr_t my_attr_t;
   resmgr_connect_funcs_t my_connect_functions;
   resmgr_io_funcs_t my_io_functions;
@@ -30,55 +30,72 @@ int main(void) {
   my_io_functions.write = io_write;
 
   // iofunc_attr_t構造体の初期化
-  
+
   iofunc_attr_init(&my_attr_t, S_IFCHR | 0666, NULL, NULL);
-  ///dev/mynullのアタッチ
+  /// dev/mynullのアタッチ
   int id = resmgr_attach(dpp, NULL, "/dev/mynull", _FTYPE_ANY, 0,
                          &my_connect_functions, &my_io_functions, &my_attr_t);
+  if (id == -1) {
+    perror("/dev/mynullのアタッチに失敗しました。\n");
+    return 0;
+  }
   ctp = dispatch_context_alloc(dpp);
   while (1) {
-    ctp = dispatch_block(ctp);
-    dispatch_handler(ctp);
+    new_ctp = dispatch_block(ctp);
+    if(new_ctp){
+        ctp=new_ctp;
+    }else{
+        perror("メッセージの待受に失敗しました。\n");
+        return 0;
+    }
+    int handle_err=dispatch_handler(ctp);
+    if(handle_err==-1){
+        perror("メッセージの処理に失敗しました。\n");
+        return 0;
+    }
+
   }
 }
-int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,void*extra) {
-  return iofunc_open_default(ctp,msg,
-                             handle, extra);
+int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
+            void *extra) {
+                printf("openしたよ\n");
+  return iofunc_open_default(ctp, msg, handle, extra);
 }
-int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
-{
-    int status;
-    if ((status = iofunc_read_verify(ctp, msg, ocb, NULL)) != EOK) {
-        return status;
-    }
-    if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) {
-        return ENOSYS;
-    }
+int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
+  int status;
+  if ((status = iofunc_read_verify(ctp, msg, ocb, NULL)) != EOK) {
+    return status;
+  }
+  if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) {
+    return ENOSYS;
+  }
 
-    _IO_SET_READ_NBYTES(ctp, 0); /* 0 bytes successfully read */
+  _IO_SET_READ_NBYTES(ctp, 0); /* 0 bytes successfully read */
 
-    if (msg->i.nbytes > 0) { /* mark access time for update */
-        *ocb.attr->flags |= IOFUNC_ATTR_ATIME;
-    }
+  if (msg->i.nbytes > 0) { /* mark access time for update */
+    ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_ATIME;
+  }
+  printf("readしたよ\n");
 
-    return _RESMGR_NPARTS(0);
+  return _RESMGR_NPARTS(0);
 }
 
-int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
-{
-    int status;
-    if ((status = iofunc_write_verify(ctp, msg, ocb, NULL)) != EOK) {
-        return status;
-    }
-    if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) {
-        return ENOSYS;
-    }
+int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
+  int status;
+  if ((status = iofunc_write_verify(ctp, msg, ocb, NULL)) != EOK) {
+    return status;
+  }
+  if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) {
+    return ENOSYS;
+  }
 
-    _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
+  _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
 
-    if (msg->i.nbytes > 0) { /* mark times for update */
-        *ocb.attr->flags |= IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
-    }
+  if (msg->i.nbytes > 0) { /* mark times for update */
+    ((struct _iofunc_ocb *)ocb)->attr->flags |=
+        IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
+  }
+  printf("writeしたよ\n");
 
-    return _RESMGR_NPARTS(0);
+  return _RESMGR_NPARTS(0);
 }
