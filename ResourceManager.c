@@ -1,14 +1,14 @@
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/dispatch.h>
 #include <sys/iofunc.h>
 #include <sys/resmgr.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include "header.h"
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra);
@@ -106,46 +106,47 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
     return ENOSYS;
   }
 
-  _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
-
   //書き込み処理
   if (strlen(file_path) > 0) {
     printf("HELLO\n");
-    int dest_fp = open(file_path, O_WRONLY | O_CREAT | O_EXCL, S_IREAD | S_IWRITE);
+    int dest_fp =
+        open(file_path, O_WRONLY | O_CREAT | O_APPEND, S_IREAD | S_IWRITE);
     if (dest_fp == -1) {
-      perror("すでに存在しているファイル名です。変更してください。\n");
+      perror("書き込みファイルのオープンでエラーが発生しました。\n");
       return 0;
     }
-    int yomikomi=msg->i.nbytes;
-    const char *buf_sub=(char*)msg+sizeof(io_write_t);
+    int yomikomi = msg->i.nbytes;
+    const char *buf_sub = (char *)msg + sizeof(io_write_t);
 
     while (yomikomi > 0) {
-      
       int kakikomi = write(dest_fp, buf_sub, yomikomi);
       //エラー処理
       if (kakikomi == -1) {
         if (errno == EINTR) {
         } else {
           perror("ファイルの書き込みに失敗しました。\n");
-          unlink(file_path);
           return 0;
         }
       }
       buf_sub += kakikomi;
       yomikomi -= kakikomi;
-    }
-    if(close(dest_fp)==-1){
-      perror("作ったファイルを閉じるのに失敗しました。\n");
-      return  _RESMGR_NPARTS(0);
-    }
+      _IO_SET_WRITE_NBYTES(ctp, kakikomi);
 
+      if (kakikomi > 0) { /* mark times for update */
+        ((struct _iofunc_ocb *)ocb)->attr->flags |=
+            IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
+      }
+    }
+    close(dest_fp);
   }
+
+  printf("writeしたよ\n");
+  //書いたふり(うまく書き込めるようになったら消す)
+  _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
 
   if (msg->i.nbytes > 0) { /* mark times for update */
-    ((struct _iofunc_ocb *)ocb)->attr->flags |=
-        IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
+    ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
   }
-  printf("writeしたよ\n");
 
   return _RESMGR_NPARTS(0);
 }
@@ -164,11 +165,11 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
   switch (msg->i.dcmd) {
     case MYNULL_CODE:
       //ファイル名の書き込み
-      //sprintf(file_path, _DEVCTL_DATA(msg->i));
-      printf("%s\n", (char*)_DEVCTL_DATA(msg->i));
+      // sprintf(file_path, _DEVCTL_DATA(msg->i));
+      printf("%s\n", (char *)_DEVCTL_DATA(msg->i));
       break;
   }
-  //sprintf(file_path, "/tmp/abc.txt");
+  // sprintf(file_path, "/tmp/abc.txt");
   printf("devctlしたよ\n");
   return _RESMGR_NPARTS(0);
 }
