@@ -168,6 +168,7 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
       printf("%s\n", (char*)_DEVCTL_DATA(msg->i));
       break;
   }
+  //sprintf(file_path, "/tmp/abc.txt");
   printf("devctlしたよ\n");
   return _RESMGR_NPARTS(0);
 }
