@@ -1,15 +1,16 @@
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/dispatch.h>
 #include <sys/iofunc.h>
 #include <sys/resmgr.h>
-#include<stdlib.h>
 #include "header.h"
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
+//int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
 int main(void) {
   //ディスパッチ構造体の作成と各種変数の定義
   dispatch_t *dpp;
@@ -30,6 +31,7 @@ int main(void) {
   my_connect_functions.open = io_open;
   my_io_functions.read = io_read;
   my_io_functions.write = io_write;
+  //my_io_functions.devctl = io_devctl;
 
   // iofunc_attr_t構造体の初期化
 
@@ -42,14 +44,14 @@ int main(void) {
     return 0;
   }
   ctp = dispatch_context_alloc(dpp);
+  //パルスの処理
+  int code = pulse_attach(dpp, 0, PULSE_CODE, &my_func, NULL);
+  if (code == -1) {
+    perror("パルスの処理に失敗しました。");
+    return 0;
+  }
   //メッセージの待受と処理
   while (1) {
-    //パルスの処理
-    int code = pulse_attach(dpp, MSG_FLAG_ALLOC_PULSE, PULSE_CODE, &my_func, NULL);
-    if (code == -1) {
-      perror("パルスの処理に失敗しました。");
-      return 0;
-    } 
     new_ctp = dispatch_block(ctp);
     if (new_ctp) {
       ctp = new_ctp;
@@ -108,8 +110,8 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
 
   return _RESMGR_NPARTS(0);
 }
-int my_func(message_context_t *ctp, int code, unsigned flags, void *handle){
-  if(code==PULSE_CODE){
+int my_func(message_context_t *ctp, int code, unsigned flags, void *handle) {
+  if (code == PULSE_CODE) {
     printf("指定されたパルスを取得したのでアプリケーションを終了します\n");
     exit(0);
   }

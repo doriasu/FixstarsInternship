@@ -17,6 +17,9 @@ int main(void){
     return 0;
   }
   send_pulse(null_open);
+  if(ConnectDetach(null_open)==-1){
+    perror("ファイルを閉じるのに失敗しました。\n");
+  }
   return 0;
 
 
