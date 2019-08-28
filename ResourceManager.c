@@ -4,13 +4,19 @@
 #include <sys/dispatch.h>
 #include <sys/iofunc.h>
 #include <sys/resmgr.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "header.h"
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
-//int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
+int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
+char file_path[100];
 int main(void) {
   //ディスパッチ構造体の作成と各種変数の定義
   dispatch_t *dpp;
@@ -26,12 +32,12 @@ int main(void) {
 
   iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &my_connect_functions,
                    _RESMGR_IO_NFUNCS, &my_io_functions);
-  // open,read,writeの設定
+  // open,read,write,devctlの設定
   //関数ポインタを渡す
   my_connect_functions.open = io_open;
   my_io_functions.read = io_read;
   my_io_functions.write = io_write;
-  //my_io_functions.devctl = io_devctl;
+  my_io_functions.devctl = io_devctl;
 
   // iofunc_attr_t構造体の初期化
 
@@ -102,6 +108,39 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
 
   _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
 
+  //書き込み処理
+  if (strlen(file_path) > 0) {
+    printf("HELLO\n");
+    int dest_fp = open(file_path, O_WRONLY | O_CREAT | O_EXCL, S_IREAD | S_IWRITE);
+    if (dest_fp == -1) {
+      perror("すでに存在しているファイル名です。変更してください。\n");
+      return 0;
+    }
+    int yomikomi=msg->i.nbytes;
+    const char *buf_sub=(char*)msg+sizeof(io_write_t);
+
+    while (yomikomi > 0) {
+      
+      int kakikomi = write(dest_fp, buf_sub, yomikomi);
+      //エラー処理
+      if (kakikomi == -1) {
+        if (errno == EINTR) {
+        } else {
+          perror("ファイルの書き込みに失敗しました。\n");
+          unlink(file_path);
+          return 0;
+        }
+      }
+      buf_sub += kakikomi;
+      yomikomi -= kakikomi;
+    }
+    if(close(dest_fp)==-1){
+      perror("作ったファイルを閉じるのに失敗しました。\n");
+      return  _RESMGR_NPARTS(0);
+    }
+
+  }
+
   if (msg->i.nbytes > 0) { /* mark times for update */
     ((struct _iofunc_ocb *)ocb)->attr->flags |=
         IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
@@ -116,4 +155,19 @@ int my_func(message_context_t *ctp, int code, unsigned flags, void *handle) {
     exit(0);
   }
   return 0;
+}
+int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
+  int status = iofunc_devctl_default(ctp, msg, ocb);
+  if (status != _RESMGR_DEFAULT) {
+    return status;
+  }
+  switch (msg->i.dcmd) {
+    case MYNULL_CODE:
+      //ファイル名の書き込み
+      //sprintf(file_path, _DEVCTL_DATA(msg->i));
+      printf("%s\n", (char*)_DEVCTL_DATA(msg->i));
+      break;
+  }
+  printf("devctlしたよ\n");
+  return _RESMGR_NPARTS(0);
 }
