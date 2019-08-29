@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <devctl.h>
 #define PULSE_CODE _PULSE_CODE_MINAVAIL+1
-#define MYNULL_CODE 2
+#define MYNULL_CODE 10
 #define DCMD_MYNULL_KAKIKOMI __DIOT(_DCMD_MISC, MYNULL_CODE, char[256])
 
 

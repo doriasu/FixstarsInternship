@@ -10,15 +10,17 @@ int main(int argc, char **argv) {
     return 0;
   }
   char *path = "/dev/mynull";
-  int null_open = open(path, O_RDWR);
+  int null_open = open(path, O_RDONLY);
   if (null_open == -1) {
     perror("mynullを開くのに失敗しました。\n");
     return 0;
   }
   char file_path[256];
   sprintf(file_path,argv[1]);
-  if (devctl(null_open,MYNULL_CODE,file_path,sizeof(file_path),NULL) != EOK) {
+  if (devctl(null_open,DCMD_MYNULL_KAKIKOMI,file_path,sizeof(file_path),NULL) != EOK) {
     perror("devctlにエラーが発生しました。\n");
+  }else{
+    printf("送ったよ\n");
   }
 
   return 0;

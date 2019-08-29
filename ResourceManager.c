@@ -108,7 +108,6 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
 
   //書き込み処理
   if (strlen(file_path) > 0) {
-    printf("HELLO\n");
     int dest_fp =
         open(file_path, O_WRONLY | O_CREAT | O_APPEND, S_IREAD | S_IWRITE);
     if (dest_fp == -1) {
@@ -117,36 +116,44 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
     }
     int yomikomi = msg->i.nbytes;
     const char *buf_sub = (char *)msg + sizeof(io_write_t);
+    int sum = 0;
 
     while (yomikomi > 0) {
       int kakikomi = write(dest_fp, buf_sub, yomikomi);
+      sum += kakikomi;
       //エラー処理
       if (kakikomi == -1) {
         if (errno == EINTR) {
         } else {
           perror("ファイルの書き込みに失敗しました。\n");
-          return 0;
+
+          break;
         }
       }
       buf_sub += kakikomi;
       yomikomi -= kakikomi;
-      _IO_SET_WRITE_NBYTES(ctp, kakikomi);
+    }
+    if (sum <= 0) {
+      sum = 1;
+    }
+    _IO_SET_WRITE_NBYTES(ctp, sum);
 
-      if (kakikomi > 0) { /* mark times for update */
-        ((struct _iofunc_ocb *)ocb)->attr->flags |=
-            IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
-      }
+    if (sum > 0) { /* mark times for update */
+      ((struct _iofunc_ocb *)ocb)->attr->flags |=
+          IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
     }
     close(dest_fp);
+  } else {
+    //書いたふり(ファイルパスが指定されていない時のため)
+    _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
+
+    if (msg->i.nbytes > 0) { /* mark times for update */
+      ((struct _iofunc_ocb *)ocb)->attr->flags |=
+          IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
+    }
   }
 
   printf("writeしたよ\n");
-  //書いたふり(うまく書き込めるようになったら消す)
-  _IO_SET_WRITE_NBYTES(ctp, msg->i.nbytes);
-
-  if (msg->i.nbytes > 0) { /* mark times for update */
-    ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
-  }
 
   return _RESMGR_NPARTS(0);
 }
@@ -163,10 +170,10 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
     return status;
   }
   switch (msg->i.dcmd) {
-    case MYNULL_CODE:
+    case DCMD_MYNULL_KAKIKOMI:
       //ファイル名の書き込み
-      // sprintf(file_path, _DEVCTL_DATA(msg->i));
-      printf("%s\n", (char *)_DEVCTL_DATA(msg->i));
+      // printf("%s\n", (char *)_DEVCTL_DATA(msg->i));
+      sprintf(file_path, _DEVCTL_DATA(msg->i));
       break;
   }
   // sprintf(file_path, "/tmp/abc.txt");
