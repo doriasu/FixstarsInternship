@@ -111,8 +111,9 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
     int dest_fp =
         open(file_path, O_WRONLY | O_CREAT | O_APPEND, S_IREAD | S_IWRITE);
     if (dest_fp == -1) {
+      int err=errno;
       perror("書き込みファイルのオープンでエラーが発生しました。\n");
-      return _RESMGR_NPARTS(-1);
+      return err;
     }
     int yomikomi = msg->i.nbytes;
     const char *buf_sub = (char *)msg + sizeof(io_write_t);
@@ -125,9 +126,10 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
       if (kakikomi == -1) {
         if (errno == EINTR) {
         } else {
+          int err=errno;
           perror("ファイルの書き込みに失敗しました。\n");
 
-          return _RESMGR_NPARTS(-1);
+          return err;
         }
       }
       buf_sub += kakikomi;
@@ -169,7 +171,7 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
   switch (msg->i.dcmd) {
     case DCMD_MYNULL_KAKIKOMI:
       //ファイル名の書き込み
-      snprintf(file_path, sizeof(file_path), _DEVCTL_DATA(msg->i));
+      snprintf(file_path, sizeof(file_path),"%s",(char*)_DEVCTL_DATA(msg->i));
       break;
   }
   printf("devctlしたよ\n");
