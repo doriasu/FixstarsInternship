@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "header.h"
 #include <string.h>
+#include <sys/neutrino.h>
 static void usage(void) {
   printf(
       "Usage: shot [-r resolution] [-d device] [-i interval] file1 [file2 "
@@ -48,22 +49,22 @@ int main(int argc, char *argv[]) {
   }
 
   // 解像度設定
-  if (strcmp(resolution, "160*120") == 0) {
-  } else if (strcmp(resolution, "176*144") == 0) {
-  } else if (strcmp(resolution, "320*240") == 0) {
-  } else if (strcmp(resolution, "352*288") == 0) {
-  } else if (strcmp(resolution, "640*480") == 0) {
-  } else if (strcmp(resolution, "800*600") == 0) {
-  } else if (strcmp(resolution, "1024*768") == 0) {
-  } else if (strcmp(resolution, "1280*1024") == 0) {
-  } else if (strcmp(resolution, "1600*1200") == 0) {
+  if (strcmp(resolution, "CAMERA_RES_160X120") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_176X144") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_160X120") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_352X288") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_640X480") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_800X600") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_1024X768") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_1280X1024") == 0) {
+  } else if (strcmp(resolution, "CAMERA_RES_1600X1200") == 0) {
   } else if (strcmp(resolution, "A") == 0) {
   } else {
     printf("その解像度は存在しません。\n");
     return 0;
   }
   if (strcmp(resolution, "A") != 0) {
-    if (devctl(fd, DCMD_CAMERA_SETRES, resolution, sizeof(resolution), NULL) !=
+    if (devctl(fd, DCMD_CAMERA_SETRES, STR(resolution), sizeof(STR(resolution)), NULL) !=
         EOK) {
       perror("devctlにエラーが発生しました。\n");
     } else {
@@ -80,8 +81,9 @@ int main(int argc, char *argv[]) {
       perror("すでに存在しているファイル名です。変更してください。\n");
       return 0;
     }
-    int yomikomi;
-    char buf[10000];
+    int yomikomi=0;
+    char buf[100000];
+    //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
     while ((yomikomi = read(fd, buf, sizeof(buf))) != 0) {
       if (yomikomi == -1) {
@@ -92,10 +94,11 @@ int main(int argc, char *argv[]) {
           return 0;
         }
       }
-      
-      const char *buf_sub = buf;
+       
+      char *buf_sub = buf;
       while (yomikomi > 0) {
-        int kakikomi = write(dest_fp, buf_sub, yomikomi);
+        int kakikomi = read(dest_fp,buf_sub, yomikomi);
+       
         //エラー処理
         if (kakikomi == -1) {
           if (errno == EINTR) {

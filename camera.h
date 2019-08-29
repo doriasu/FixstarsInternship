@@ -24,14 +24,14 @@ int fd_spi;
 //カメラ周り
 uint8_t (*kaizoudo)[2];
 int kaizoudo_size;
-char kaizoudo_now[20];
+int kaizoudo_now;
 //以下カメラに関する関数
 int Camera_setup(int fd) {
   //解像度640*480
   kaizoudo_size = 0;
   kaizoudo = gazou_640;
   kaizoudo_size = sizeof(gazou_640);
-  strncpy(kaizoudo_now, "640*480", sizeof(kaizoudo_now));
+  kaizoudo_now=4;
   // SPIパート
   uint32_t bits_per_word = SPI_MODE_CHAR_LEN_MASK & 8;
   spi_cfg_t cfg = {
