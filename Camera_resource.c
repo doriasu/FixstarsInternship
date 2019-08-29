@@ -113,6 +113,7 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
 }
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
   int status;
+  uint32_t yomikomi;
   if ((status = iofunc_read_verify(ctp, msg, ocb, NULL)) != EOK) {
     return status;
   }
@@ -120,7 +121,6 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
     return ENOSYS;
   }
   if (satsuei_flag) {
-    uint32_t yomikomi;
     if (gazou_size < msg->i.nbytes) {
       yomikomi = gazou_size;
 
@@ -149,7 +149,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
     //撮影していない場合なのでとりあえず撮影する
     gazou_size = satsuei(fd_spi);
     //実際の読み込み操作
-    uint32_t yomikomi = msg->i.nbytes;
+    yomikomi = msg->i.nbytes;
     char gaso[yomikomi];
     uint8_t burst[1] = {0x3c};
     if ((spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso, sizeof(gaso))) <
@@ -166,13 +166,12 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       return 0;
     } else {
       satsuei_flag = 1;
-      return 1;
     }
   }
 
-  _IO_SET_READ_NBYTES(ctp, 0); /* 0 bytes successfully read */
+  _IO_SET_READ_NBYTES(ctp, yomikomi); /* 0 bytes successfully read */
 
-  if (msg->i.nbytes > 0) { /* mark access time for update */
+  if (yomikomi > 0) { /* mark access time for update */
     ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_ATIME;
   }
   printf("readしたよ\n");
