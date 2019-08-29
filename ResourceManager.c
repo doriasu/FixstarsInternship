@@ -16,7 +16,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
 int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
-char file_path[100];
+char file_path[256];
 int main(void) {
   //ディスパッチ構造体の作成と各種変数の定義
   dispatch_t *dpp;
@@ -112,7 +112,7 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
         open(file_path, O_WRONLY | O_CREAT | O_APPEND, S_IREAD | S_IWRITE);
     if (dest_fp == -1) {
       perror("書き込みファイルのオープンでエラーが発生しました。\n");
-      return 0;
+      return _RESMGR_NPARTS(-1);
     }
     int yomikomi = msg->i.nbytes;
     const char *buf_sub = (char *)msg + sizeof(io_write_t);
@@ -127,14 +127,11 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
         } else {
           perror("ファイルの書き込みに失敗しました。\n");
 
-          break;
+          return _RESMGR_NPARTS(-1);
         }
       }
       buf_sub += kakikomi;
       yomikomi -= kakikomi;
-    }
-    if (sum <= 0) {
-      sum = 1;
     }
     _IO_SET_WRITE_NBYTES(ctp, sum);
 
@@ -172,11 +169,9 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
   switch (msg->i.dcmd) {
     case DCMD_MYNULL_KAKIKOMI:
       //ファイル名の書き込み
-      // printf("%s\n", (char *)_DEVCTL_DATA(msg->i));
-      sprintf(file_path, _DEVCTL_DATA(msg->i));
+      snprintf(file_path, sizeof(file_path), _DEVCTL_DATA(msg->i));
       break;
   }
-  // sprintf(file_path, "/tmp/abc.txt");
   printf("devctlしたよ\n");
   return _RESMGR_NPARTS(0);
 }
