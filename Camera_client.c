@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
       }
       char *buf_sub = buf;
       while (yomikomi > 0) {
-        int kakikomi = read(dest_fp, buf_sub, yomikomi);
+        int kakikomi = write(dest_fp, buf_sub, yomikomi);
 
         //エラー処理
         if (kakikomi == -1) {
