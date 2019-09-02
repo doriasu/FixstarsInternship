@@ -111,7 +111,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
   }
   if (gazou_size == 0 && satsuei_flag == 1) {
     satsuei_flag = 0;
-    return 0;
+    return _RESMGR_NPARTS(0);
   }
   int real_size;
   printf("read始めるよ\n");
@@ -130,10 +130,9 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       perror("書き込みに失敗しました\n");
       return EBADF;
     }
-    printf("%d\n",real_size);
-    buf_sub=malloc(sizeof(char)*real_size);
-    memmove(buf_sub,gaso,real_size);
-
+    ctp->iov[0].iov_base=gaso;
+    ctp->iov[0].iov_len=real_size;  
+ 
     gazou_size -= real_size;
 
   } else { 
@@ -151,21 +150,20 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       perror("書き込みに失敗しましたe\n");
       return tmp_err;
     }
-    printf("%d\n",real_size);
-    buf_sub=malloc(sizeof(char)*real_size);
-    memmove(buf_sub,gaso,real_size);
+    ctp->iov[0].iov_base=gaso;
+    ctp->iov[0].iov_len=real_size;
     gazou_size -= real_size;
     satsuei_flag=1;
   }
 
-  _IO_SET_READ_NBYTES(ctp, real_size);
+  _IO_SET_READ_NBYTES(ctp, real_size); 
 
   if (real_size > 0) { /* mark access time for update */
     ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_ATIME;
   }
   printf("readしたよ\n");
 
-  return _RESMGR_NPARTS(0);
+  return _RESMGR_NPARTS(1);
 }
 
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
