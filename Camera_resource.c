@@ -12,8 +12,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "header.h"
 #include "camera.h"
+#include "header.h"
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
@@ -109,11 +109,11 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
   if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) {
     return ENOSYS;
   }
-  if (gazou_size == 0&&satsuei_flag==1) {
-      satsuei_flag = 0;
-      return 0;
-    }
-    int real_size;
+  if (gazou_size == 0 && satsuei_flag == 1) {
+    satsuei_flag = 0;
+    return 0;
+  }
+  int real_size;
   printf("read始めるよ\n");
   if (satsuei_flag) {
     if (gazou_size < msg->i.nbytes) {
@@ -122,42 +122,33 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
     } else {
       yomikomi = msg->i.nbytes;
     }
-    char gaso[yomikomi];
     uint8_t burst[1] = {0x3c};
-    if ((real_size=spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso, sizeof(gaso))) <
-        0) {
-      perror("読み込みに失敗しましたe\n");
+    char *buf_sub = (char *)msg + sizeof(io_read_t);
+    if ((real_size=spi_cmdread(fd_spi, 0, burst, sizeof(burst), buf_sub, yomikomi)) <0) {
+      perror("書き込みに失敗しました\n");
       return EBADF;
     }
     gazou_size -= real_size;
-    char *buf_sub = (char *)msg + sizeof(io_read_t);
-    memcpy(buf_sub, gaso, real_size);
-    
+
   } else {
     //撮影していない場合なのでとりあえず撮影する
     gazou_size = satsuei(fd_spi);
     printf("撮影したよ\n");
     //実際の読み込み操作
-    yomikomi = min(msg->i.nbytes,gazou_size);
-    char gaso[yomikomi];
+    yomikomi = min((uint32_t)(msg->i.nbytes), gazou_size);
     uint8_t burst[1] = {0x3c};
-    if ((real_size=spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso, sizeof(gaso))) <
-        0) {
-            int tmp_err=errno;
-      perror("読み込みに失敗しましたe\n");
+    char *buf_sub = (char *)msg + sizeof(io_read_t);
+    if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), buf_sub,
+                                 yomikomi)) < 0) {
+      int tmp_err = errno;
+      perror("書き込みに失敗しましたe\n");
       return tmp_err;
     }
     gazou_size -= real_size;
-    //かきだす
-    char *buf_sub = (char *)msg + sizeof(io_read_t);
-    memcpy(buf_sub, gaso, real_size
-    );
-    
-    
-   
+  
   }
 
-  _IO_SET_READ_NBYTES(ctp, real_size); /* 0 bytes successfully read */
+  _IO_SET_READ_NBYTES(ctp, real_size);
 
   if (real_size > 0) { /* mark access time for update */
     ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_ATIME;
@@ -193,33 +184,33 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
         kaizoudo = gazou_160;
         kaizoudo_size = sizeof(gazou_160);
 
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 1) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 1) {
         kaizoudo = gazou_176;
         kaizoudo_size = sizeof(gazou_176);
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 2) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 2) {
         kaizoudo = gazou_320;
         kaizoudo_size = sizeof(gazou_320);
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 3) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 3) {
         kaizoudo = gazou_352;
         kaizoudo_size = sizeof(gazou_352);
 
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 4) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 4) {
         kaizoudo = gazou_640;
         kaizoudo_size = sizeof(gazou_640);
 
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 5) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 5) {
         kaizoudo = gazou_800;
         kaizoudo_size = sizeof(gazou_800);
 
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 6) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 6) {
         kaizoudo = gazou_1024;
         kaizoudo_size = sizeof(gazou_1024);
 
-      } else if (*(int*)_DEVCTL_DATA(msg->i) == 7) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 7) {
         kaizoudo = gazou_1280;
         kaizoudo_size = sizeof(gazou_1280);
 
-      } else if (*(int*)_DEVCTL_DATA(msg->i)  == 8) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 8) {
         kaizoudo = gazou_1600;
         kaizoudo_size = sizeof(gazou_1600);
 
@@ -227,22 +218,22 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
         printf("その解像度は存在しません。\n");
         return 0;
       }
-      kaizoudo_now=*(int*)_DEVCTL_DATA(msg->i);
+      kaizoudo_now = *(int *)_DEVCTL_DATA(msg->i);
 
       break;
     case DCMD_CAMERA_GETRES:
-      strncpy(((char*)msg)+(sizeof(struct _io_devctl)),kaizoudo_now,sizeof(kaizoudo_now));
+      memcpy(((char *)msg) + (sizeof(struct _io_devctl)), (int *)kaizoudo_now,
+             sizeof(kaizoudo_now));
       break;
     case DCMD_CAMERA_SHOT:
       satsuei_flag = 0;
       printf("readをよんでください\n");
       break;
     case DCMD_CAMERA_GETSIZE:
-      *(((uint32_t*)msg)+(sizeof(struct _io_devctl)))=gazou_size;
+      *(((uint32_t *)msg) + (sizeof(struct _io_devctl))) = gazou_size;
       break;
   }
   // sprintf(file_path, "/tmp/abc.txt");
   printf("devctlしたよ\n");
   return _RESMGR_NPARTS(0);
 }
-

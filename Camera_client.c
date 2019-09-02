@@ -1,11 +1,11 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/neutrino.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "header.h"
-#include <string.h>
-#include <sys/neutrino.h>
 static void usage(void) {
   printf(
       "Usage: shot [-r resolution] [-d device] [-i interval] file1 [file2 "
@@ -16,7 +16,7 @@ static void usage(void) {
 int main(int argc, char *argv[]) {
   const char *camera = "/dev/Camera";
   char resolution[20] = "A";
-  long interval_ms=1000;
+  long interval_ms = 1000;
   char *endptr;
   int ch;
   while ((ch = getopt(argc, argv, "d:i:r:")) != -1) {
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (strcmp(resolution, "A") != 0) {
-    if (devctl(fd, DCMD_CAMERA_SETRES, STR(resolution), sizeof(STR(resolution)), NULL) !=
-        EOK) {
+    if (devctl(fd, DCMD_CAMERA_SETRES, STR(resolution), sizeof(STR(resolution)),
+               NULL) != EOK) {
       perror("devctlにエラーが発生しました。\n");
     } else {
       printf("送ったよ\n");
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
       perror("すでに存在しているファイル名です。変更してください。\n");
       return 0;
     }
-    int yomikomi=0;
+    int yomikomi = 0;
     char buf[100000];
     //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
@@ -94,11 +94,10 @@ int main(int argc, char *argv[]) {
           return 0;
         }
       }
-       
       char *buf_sub = buf;
       while (yomikomi > 0) {
-        int kakikomi = read(dest_fp,buf_sub, yomikomi);
-       
+        int kakikomi = read(dest_fp, buf_sub, yomikomi);
+
         //エラー処理
         if (kakikomi == -1) {
           if (errno == EINTR) {
@@ -114,8 +113,8 @@ int main(int argc, char *argv[]) {
     }
     close(dest_fp);
     clock_nanosleep(CLOCK_MONOTONIC, 0,
-                  &(struct timespec){.tv_nsec = interval_ms * 1000 * 1000},
-                  NULL);
+                    &(struct timespec){.tv_nsec = interval_ms * 1000 * 1000},
+                    NULL);
     // 次の撮影があるなら interval_ms だけ待機する
   }
 
