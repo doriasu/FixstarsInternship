@@ -123,29 +123,39 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       yomikomi = msg->i.nbytes;
     }
     uint8_t burst[1] = {0x3c};
-    char *buf_sub = (char *)msg + sizeof(io_read_t);
-    if ((real_size=spi_cmdread(fd_spi, 0, burst, sizeof(burst), buf_sub, yomikomi)) <0) {
+    char gaso[yomikomi];
+    char *buf_sub = (char*)msg + sizeof(io_read_t);
+    if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
+                                 yomikomi)) < 0) {
       perror("書き込みに失敗しました\n");
       return EBADF;
     }
+    printf("%d\n",real_size);
+    buf_sub=malloc(sizeof(char)*real_size);
+    memmove(buf_sub,gaso,real_size);
+
     gazou_size -= real_size;
 
-  } else {
+  } else { 
     //撮影していない場合なのでとりあえず撮影する
-    gazou_size = satsuei(fd_spi);
-    printf("撮影したよ\n");
+    gazou_size = satsuei(fd_spi);  
+    printf("撮影したよ\n");  
     //実際の読み込み操作
     yomikomi = min((uint32_t)(msg->i.nbytes), gazou_size);
     uint8_t burst[1] = {0x3c};
+    char gaso[yomikomi];
     char *buf_sub = (char *)msg + sizeof(io_read_t);
-    if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), buf_sub,
-                                 yomikomi)) < 0) {
+    if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
+                                 (uint32_t)yomikomi)) < 0) {
       int tmp_err = errno;
       perror("書き込みに失敗しましたe\n");
       return tmp_err;
     }
+    printf("%d\n",real_size);
+    buf_sub=malloc(sizeof(char)*real_size);
+    memmove(buf_sub,gaso,real_size);
     gazou_size -= real_size;
-  
+    satsuei_flag=1;
   }
 
   _IO_SET_READ_NBYTES(ctp, real_size);
@@ -219,6 +229,7 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
         return 0;
       }
       kaizoudo_now = *(int *)_DEVCTL_DATA(msg->i);
+      printf("現在の解像度は%s\n",namae[kaizoudo_now]);
 
       break;
     case DCMD_CAMERA_GETRES:
