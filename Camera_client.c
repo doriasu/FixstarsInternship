@@ -42,36 +42,48 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  const int fd = open(camera, O_RDONLY);
+  const int fd = open(camera, O_RDONLY); 
   if (fd < 0) {
     // エラー処理
     perror("cameraを開くのに失敗しました。\n");
   }
 
   // 解像度設定
-  if (strcmp(resolution, "CAMERA_RES_160X120") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_176X144") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_160X120") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_352X288") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_640X480") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_800X600") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_1024X768") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_1280X1024") == 0) {
-  } else if (strcmp(resolution, "CAMERA_RES_1600X1200") == 0) {
+  enum KAIZOUDO kaizoudo_num;
+  if (strcmp(resolution, namae[0]) == 0) {
+    kaizoudo_num = CAMERA_RES_160X120;
+  } else if (strcmp(resolution, namae[1]) == 0) {
+    kaizoudo_num = CAMERA_RES_176X144;
+  } else if (strcmp(resolution, namae[2]) == 0) {
+    kaizoudo_num = CAMERA_RES_320X240;
+  } else if (strcmp(resolution, namae[3]) == 0) {
+    kaizoudo_num = CAMERA_RES_352X288;
+  } else if (strcmp(resolution, namae[4]) == 0) {
+    kaizoudo_num = CAMERA_RES_640X480;
+  } else if (strcmp(resolution, namae[5]) == 0) {  
+    kaizoudo_num = CAMERA_RES_800X600;
+  } else if (strcmp(resolution, namae[6]) == 0) {
+    kaizoudo_num = CAMERA_RES_1024X768;
+  } else if (strcmp(resolution, namae[7]) == 0) {
+    kaizoudo_num = CAMERA_RES_1280X1024;
+  } else if (strcmp(resolution, namae[8]) == 0) {
+    kaizoudo_num = CAMERA_RES_1600X1200;
   } else if (strcmp(resolution, "A") == 0) {
   } else {
     printf("その解像度は存在しません。\n");
     return 0;
   }
+
   if (strcmp(resolution, "A") != 0) {
-    if (devctl(fd, DCMD_CAMERA_SETRES, STR(resolution), sizeof(STR(resolution)),
+    if (devctl(fd, DCMD_CAMERA_SETRES, &kaizoudo_num, sizeof(kaizoudo_num),
                NULL) != EOK) {
       perror("devctlにエラーが発生しました。\n");
     } else {
-      printf("送ったよ\n");
+      printf("送ったよ%d\n", kaizoudo_num);
     }
   }
 
+  int first = 0;
   for (int i = optind; i < argc; ++i) {
     // 撮影を行い argv[i] のファイルに保存
 
@@ -83,6 +95,7 @@ int main(int argc, char *argv[]) {
     }
     int yomikomi = 0;
     char buf[100000];
+
     //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
     while ((yomikomi = read(fd, buf, sizeof(buf))) != 0) {
@@ -94,7 +107,16 @@ int main(int argc, char *argv[]) {
           return 0;
         }
       }
+      printf("%d\n", yomikomi);
+
       char *buf_sub = buf;
+      //最初のburstmode用読み捨て処理
+      if (first == 0) {
+        buf_sub++;
+        yomikomi--;
+        first = 1;
+      }
+
       while (yomikomi > 0) {
         int kakikomi = write(dest_fp, buf_sub, yomikomi);
 

@@ -12,7 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 
-int Camera_setup(int fd);
+int Camera_setup(int fd,int shoki);
 static int i2c_write(int fd, uint32_t addr, const void *yomikomi_reg,
                      size_t len);
 char *i2c_read(int fd, uint32_t addr, const void *yomikomi_reg, size_t len);
@@ -22,16 +22,16 @@ int satsuei_flag;
 uint32_t gazou_size;
 int fd_spi;
 //カメラ周り
-uint8_t (*kaizoudo)[2];
 int kaizoudo_size;
 int kaizoudo_now;
 //以下カメラに関する関数
-int Camera_setup(int fd) {
+int Camera_setup(int fd,int shoki) {
   //解像度640*480
-  kaizoudo_size = 0;
-  kaizoudo = gazou_640;
-  kaizoudo_size = sizeof(gazou_640);
-  kaizoudo_now=4;
+  if(shoki==1){
+  kaizoudo_size = 0; 
+  kaizoudo = gazou_160; 
+  kaizoudo_size = sizeof(gazou_160);
+  kaizoudo_now=1;}
   // SPIパート
   uint32_t bits_per_word = SPI_MODE_CHAR_LEN_MASK & 8;
   spi_cfg_t cfg = {

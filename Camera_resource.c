@@ -72,7 +72,7 @@ int main(void) {
     perror("i2c1を開くのに失敗しました。");
     return 0;
   }
-  if (Camera_setup(fd) == -1) {
+  if (Camera_setup(fd, 1) == -1) {
     printf("カメラの初期化に失敗しました。アプリケーションを終了します。\n");
     return 0;
   }
@@ -124,21 +124,21 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
     }
     uint8_t burst[1] = {0x3c};
     char gaso[yomikomi];
-    char *buf_sub = (char*)msg + sizeof(io_read_t);
+    char *buf_sub = (char *)msg + sizeof(io_read_t);
     if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
                                  yomikomi)) < 0) {
       perror("書き込みに失敗しました\n");
       return EBADF;
     }
-    ctp->iov[0].iov_base=gaso;
-    ctp->iov[0].iov_len=real_size;  
- 
+    ctp->iov[0].iov_base = gaso;
+    ctp->iov[0].iov_len = real_size;
+
     gazou_size -= real_size;
 
-  } else { 
+  } else {
     //撮影していない場合なのでとりあえず撮影する
-    gazou_size = satsuei(fd_spi);  
-    printf("撮影したよ\n");  
+    gazou_size = satsuei(fd_spi);
+    printf("撮影したよ\n");
     //実際の読み込み操作
     yomikomi = min((uint32_t)(msg->i.nbytes), gazou_size);
     uint8_t burst[1] = {0x3c};
@@ -150,13 +150,13 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       perror("書き込みに失敗しましたe\n");
       return tmp_err;
     }
-    ctp->iov[0].iov_base=gaso;
-    ctp->iov[0].iov_len=real_size;
+    ctp->iov[0].iov_base = gaso;
+    ctp->iov[0].iov_len = real_size;
     gazou_size -= real_size;
-    satsuei_flag=1;
+    satsuei_flag = 1;
   }
 
-  _IO_SET_READ_NBYTES(ctp, real_size); 
+  _IO_SET_READ_NBYTES(ctp, real_size);
 
   if (real_size > 0) { /* mark access time for update */
     ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_ATIME;
@@ -188,37 +188,37 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
       sprintf(file_path, _DEVCTL_DATA(msg->i));
       break;
     case DCMD_CAMERA_SETRES:
-      if (_DEVCTL_DATA(msg->i) == 0) {
+      if (*(int *)_DEVCTL_DATA(msg->i) == 1) {
         kaizoudo = gazou_160;
         kaizoudo_size = sizeof(gazou_160);
 
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 1) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 2) {
         kaizoudo = gazou_176;
         kaizoudo_size = sizeof(gazou_176);
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 2) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 3) {
         kaizoudo = gazou_320;
         kaizoudo_size = sizeof(gazou_320);
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 3) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 4) {
         kaizoudo = gazou_352;
         kaizoudo_size = sizeof(gazou_352);
 
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 4) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 5) {
         kaizoudo = gazou_640;
         kaizoudo_size = sizeof(gazou_640);
 
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 5) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 6) {
         kaizoudo = gazou_800;
         kaizoudo_size = sizeof(gazou_800);
 
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 6) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 7) {
         kaizoudo = gazou_1024;
         kaizoudo_size = sizeof(gazou_1024);
 
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 7) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 8) {
         kaizoudo = gazou_1280;
         kaizoudo_size = sizeof(gazou_1280);
 
-      } else if (*(int *)_DEVCTL_DATA(msg->i) == 8) {
+      } else if (*(int *)_DEVCTL_DATA(msg->i) == 9) {
         kaizoudo = gazou_1600;
         kaizoudo_size = sizeof(gazou_1600);
 
@@ -226,8 +226,26 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
         printf("その解像度は存在しません。\n");
         return 0;
       }
+      //カメラ再設定
+      int fd = open("/dev/i2c1", O_RDWR);
+      if (fd == -1) {
+        perror("i2c1を開くのに失敗しました。");
+        return 0;
+      }
+      uint8_t kakikomi[2];
+      // 画像のピクセルについての設定値の書き込み
+      for (int i = 0; i < kaizoudo_size / 2; i++) {
+        kakikomi[0] = kaizoudo[i][0];
+        kakikomi[1] = kaizoudo[i][1];
+        int add_er = i2c_write(fd, 0x30, kakikomi, sizeof(kakikomi));
+        if (add_er == -1) {
+          perror("書き込みに失敗しました。\n");
+          return -1;
+        }
+      }
+
       kaizoudo_now = *(int *)_DEVCTL_DATA(msg->i);
-      printf("現在の解像度は%s\n",namae[kaizoudo_now]);
+      printf("現在の解像度は%s\n", namae[kaizoudo_now - 1]);
 
       break;
     case DCMD_CAMERA_GETRES:
