@@ -9,6 +9,8 @@ Camera:Camera_resource.c
 	ntoarmv7-gcc -o Camera -Wall -Wextra -pedantic-errors Camera_resource.c -lspi-master
 Client:Camera_client.c
 	ntoarmv7-gcc -o Client -Wall -Wextra -pedantic-errors Camera_client.c -lspi-master
+try:camera_devctl.c
+	ntoarmv7-gcc -o try -Wall -Wextra -pedantic-errors camera_devctl.c -lspi-master
 
 clean:
 	rm -f Resource

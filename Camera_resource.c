@@ -20,7 +20,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
 int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
-
+int satsuei_shoki = 0;
 int main(void) {
   satsuei_flag = 0;
   //ディスパッチ構造体の作成と各種変数の定義
@@ -123,12 +123,17 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       yomikomi = msg->i.nbytes;
     }
     uint8_t burst[1] = {0x3c};
-    char gaso[yomikomi];
+    char *gaso=malloc(sizeof(char)*(yomikomi));
     char *buf_sub = (char *)msg + sizeof(io_read_t);
     if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
                                  yomikomi)) < 0) {
       perror("書き込みに失敗しました\n");
       return EBADF;
+    }
+    if(satsuei_shoki){
+      gaso++;
+      real_size--;
+      satsuei_shoki=0;
     }
     ctp->iov[0].iov_base = gaso;
     ctp->iov[0].iov_len = real_size;
@@ -142,7 +147,8 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
     //実際の読み込み操作
     yomikomi = min((uint32_t)(msg->i.nbytes), gazou_size);
     uint8_t burst[1] = {0x3c};
-    char gaso[yomikomi];
+    yomikomi++;
+    char *gaso=malloc(sizeof(char)*yomikomi);
     char *buf_sub = (char *)msg + sizeof(io_read_t);
     if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
                                  (uint32_t)yomikomi)) < 0) {
@@ -150,6 +156,9 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       perror("書き込みに失敗しましたe\n");
       return tmp_err;
     }
+    gaso++;
+    real_size--;
+    satsuei_shoki=0;
     ctp->iov[0].iov_base = gaso;
     ctp->iov[0].iov_len = real_size;
     gazou_size -= real_size;
@@ -181,6 +190,13 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
   if (status != _RESMGR_DEFAULT) {
     return status;
   }
+  status = 0;
+  int nbytes = 0;
+  union {
+    data_t data;
+    uint32_t data32;
+  } * rx_data;
+  rx_data = _DEVCTL_DATA(msg->i);
   switch (msg->i.dcmd) {
     case DCMD_MYNULL_KAKIKOMI:
       //ファイル名の書き込み
@@ -249,18 +265,24 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
 
       break;
     case DCMD_CAMERA_GETRES:
-      memcpy(((char *)msg) + (sizeof(struct _io_devctl)), (int *)kaizoudo_now,
-             sizeof(kaizoudo_now));
+      printf("%d\n", kaizoudo_now);
+      rx_data->data32 = kaizoudo_now;
+      nbytes = sizeof(rx_data->data32);
       break;
     case DCMD_CAMERA_SHOT:
-      satsuei_flag = 0;
-      printf("readをよんでください\n");
+      satsuei_flag = 1;
+      gazou_size = satsuei(fd_spi);
+      printf("撮影したのでread読んでください\n");
+      satsuei_shoki=1;
       break;
     case DCMD_CAMERA_GETSIZE:
-      *(((uint32_t *)msg) + (sizeof(struct _io_devctl))) = gazou_size;
+      rx_data->data32 = gazou_size;
+      nbytes = sizeof(rx_data->data32);
       break;
   }
+  memset(&msg->o, 0, sizeof(msg->o));
+  msg->o.nbytes = nbytes;
   // sprintf(file_path, "/tmp/abc.txt");
   printf("devctlしたよ\n");
-  return _RESMGR_NPARTS(0);
+  return (_RESMGR_PTR(ctp, &msg->o, sizeof(msg->o) + nbytes));
 }

@@ -14,6 +14,7 @@ static void usage(void) {
 }
 
 int main(int argc, char *argv[]) {
+  struct timespec timer;
   const char *camera = "/dev/Camera";
   char resolution[20] = "A";
   long interval_ms = 1000;
@@ -41,8 +42,14 @@ int main(int argc, char *argv[]) {
         usage();
     }
   }
+  if (interval_ms > 999) {
+    interval_ms /= 1000;
+    timer.tv_sec = interval_ms;
+  } else {
+    timer.tv_nsec = 1000 * 1000 * interval_ms;
+  }
 
-  const int fd = open(camera, O_RDONLY); 
+  const int fd = open(camera, O_RDONLY);
   if (fd < 0) {
     // エラー処理
     perror("cameraを開くのに失敗しました。\n");
@@ -60,7 +67,7 @@ int main(int argc, char *argv[]) {
     kaizoudo_num = CAMERA_RES_352X288;
   } else if (strcmp(resolution, namae[4]) == 0) {
     kaizoudo_num = CAMERA_RES_640X480;
-  } else if (strcmp(resolution, namae[5]) == 0) {  
+  } else if (strcmp(resolution, namae[5]) == 0) {
     kaizoudo_num = CAMERA_RES_800X600;
   } else if (strcmp(resolution, namae[6]) == 0) {
     kaizoudo_num = CAMERA_RES_1024X768;
@@ -83,7 +90,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int first = 0;
+
   for (int i = optind; i < argc; ++i) {
     // 撮影を行い argv[i] のファイルに保存
 
@@ -110,13 +117,7 @@ int main(int argc, char *argv[]) {
       printf("%d\n", yomikomi);
 
       char *buf_sub = buf;
-      //最初のburstmode用読み捨て処理
-      if (first == 0) {
-        buf_sub++;
-        yomikomi--;
-        first = 1;
-      }
-
+      
       while (yomikomi > 0) {
         int kakikomi = write(dest_fp, buf_sub, yomikomi);
 
@@ -134,9 +135,7 @@ int main(int argc, char *argv[]) {
       }
     }
     close(dest_fp);
-    clock_nanosleep(CLOCK_MONOTONIC, 0,
-                    &(struct timespec){.tv_nsec = interval_ms * 1000 * 1000},
-                    NULL);
+    clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
   }
 
