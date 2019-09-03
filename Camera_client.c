@@ -16,7 +16,7 @@ static void usage(void) {
 int main(int argc, char *argv[]) {
   struct timespec timer;
   const char *camera = "/dev/Camera";
-  char resolution[20] = "A";
+  char resolution[25] = "A";
   long interval_ms = 1000;
   char *endptr;
   int ch;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
     int yomikomi = 0;
-    char buf[100];
+    char buf[1000];
 
     //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
