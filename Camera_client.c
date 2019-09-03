@@ -43,8 +43,10 @@ int main(int argc, char *argv[]) {
     }
   }
   if (interval_ms > 999) {
+    int ms = interval_ms % 1000;
     interval_ms /= 1000;
     timer.tv_sec = interval_ms;
+    timer.tv_nsec = 1000 * 1000 * ms;
   } else {
     timer.tv_nsec = 1000 * 1000 * interval_ms;
   }
@@ -90,7 +92,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-
   for (int i = optind; i < argc; ++i) {
     // 撮影を行い argv[i] のファイルに保存
 
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
     int yomikomi = 0;
-    char buf[100000];
+    char buf[100];
 
     //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
       printf("%d\n", yomikomi);
 
       char *buf_sub = buf;
-      
+
       while (yomikomi > 0) {
         int kakikomi = write(dest_fp, buf_sub, yomikomi);
 

@@ -21,6 +21,7 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
 int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
 int satsuei_shoki = 0;
+
 int main(void) {
   satsuei_flag = 0;
   //ディスパッチ構造体の作成と各種変数の定義
@@ -76,6 +77,7 @@ int main(void) {
     printf("カメラの初期化に失敗しました。アプリケーションを終了します。\n");
     return 0;
   }
+  close(fd);
 
   //メッセージの待受と処理
   while (1) {
@@ -92,6 +94,7 @@ int main(void) {
       return 0;
     }
   }
+  close(fd_spi);
   return 0;
 }
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
@@ -115,6 +118,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
   }
   int real_size;
   printf("read始めるよ\n");
+  //撮影済みかどうかで分岐
   if (satsuei_flag) {
     if (gazou_size < msg->i.nbytes) {
       yomikomi = gazou_size;
@@ -123,18 +127,24 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
       yomikomi = msg->i.nbytes;
     }
     uint8_t burst[1] = {0x3c};
-    char *gaso=malloc(sizeof(char)*(yomikomi));
-    char *buf_sub = (char *)msg + sizeof(io_read_t);
+    //読み出し領域の確保
+    char *gaso = malloc(sizeof(char) * (yomikomi));
+    if (gaso == NULL) {
+      perror("写真用メモリの確保に失敗しました。\n");
+    }
     if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
                                  yomikomi)) < 0) {
       perror("書き込みに失敗しました\n");
       return EBADF;
     }
-    if(satsuei_shoki){
+    //撮影したばかりの時はburstmode用の1byte読み飛ばしが必要
+    if (satsuei_shoki) {
       gaso++;
       real_size--;
-      satsuei_shoki=0;
+      satsuei_shoki = 0;
     }
+    // readのデータを返すときにはcto->iov[0]に対しポインタの受け渡しとサイズの容量の追記が必要
+    // SETIOVでも代用可能
     ctp->iov[0].iov_base = gaso;
     ctp->iov[0].iov_len = real_size;
 
@@ -148,30 +158,34 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
     yomikomi = min((uint32_t)(msg->i.nbytes), gazou_size);
     uint8_t burst[1] = {0x3c};
     yomikomi++;
-    char *gaso=malloc(sizeof(char)*yomikomi);
-    char *buf_sub = (char *)msg + sizeof(io_read_t);
+    char *gaso = malloc(sizeof(char) * yomikomi);
+    if (gaso == NULL) {
+      perror("写真用メモリの確保に失敗しました。\n");
+    }
     if ((real_size = spi_cmdread(fd_spi, 0, burst, sizeof(burst), gaso,
                                  (uint32_t)yomikomi)) < 0) {
       int tmp_err = errno;
       perror("書き込みに失敗しましたe\n");
       return tmp_err;
     }
+    //上の分に同じ
     gaso++;
     real_size--;
-    satsuei_shoki=0;
+    satsuei_shoki = 0;
     ctp->iov[0].iov_base = gaso;
     ctp->iov[0].iov_len = real_size;
     gazou_size -= real_size;
     satsuei_flag = 1;
   }
 
+  // ctpに対し読んだ容量を書き込むことが必要
   _IO_SET_READ_NBYTES(ctp, real_size);
 
   if (real_size > 0) { /* mark access time for update */
     ((struct _iofunc_ocb *)ocb)->attr->flags |= IOFUNC_ATTR_ATIME;
   }
   printf("readしたよ\n");
-
+  //ここを1にしないとreadの内容を返すことができない(数を表す)
   return _RESMGR_NPARTS(1);
 }
 
@@ -196,8 +210,10 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
     data_t data;
     uint32_t data32;
   } * rx_data;
+  //データを返す場合用
   rx_data = _DEVCTL_DATA(msg->i);
   switch (msg->i.dcmd) {
+    //解像度の変更用(header.hに定数が割り当ててあるのでそれを使う)
     case DCMD_MYNULL_KAKIKOMI:
       //ファイル名の書き込み
       // printf("%s\n", (char *)_DEVCTL_DATA(msg->i));
@@ -259,30 +275,36 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb) {
           return -1;
         }
       }
+      close(fd);
 
       kaizoudo_now = *(int *)_DEVCTL_DATA(msg->i);
       printf("現在の解像度は%s\n", namae[kaizoudo_now - 1]);
 
       break;
+    //現在の解像度の取得用
     case DCMD_CAMERA_GETRES:
       printf("%d\n", kaizoudo_now);
+      //解像度のコードの受け渡し
       rx_data->data32 = kaizoudo_now;
       nbytes = sizeof(rx_data->data32);
       break;
+    //再撮影
     case DCMD_CAMERA_SHOT:
       satsuei_flag = 1;
       gazou_size = satsuei(fd_spi);
       printf("撮影したのでread読んでください\n");
-      satsuei_shoki=1;
+      satsuei_shoki = 1;
       break;
+    //まだ受け渡していない容量の取得
     case DCMD_CAMERA_GETSIZE:
       rx_data->data32 = gazou_size;
       nbytes = sizeof(rx_data->data32);
       break;
   }
   memset(&msg->o, 0, sizeof(msg->o));
+  //書き込んだ容量の登録が必要
   msg->o.nbytes = nbytes;
-  // sprintf(file_path, "/tmp/abc.txt");
   printf("devctlしたよ\n");
+  //こういうものらしい
   return (_RESMGR_PTR(ctp, &msg->o, sizeof(msg->o) + nbytes));
 }
