@@ -18,6 +18,8 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle,
             void *extra);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
+int io_write_kaizoudo(resmgr_context_t *ctp, io_write_t *msg,
+                      RESMGR_OCB_T *ocb);
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle);
 int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
 int satsuei_shoki = 0;
@@ -25,6 +27,7 @@ int satsuei_shoki = 0;
 int main(void) {
   satsuei_flag = 0;
   //ディスパッチ構造体の作成と各種変数の定義
+  //撮影用
   dispatch_t *dpp;
   dispatch_context_t *ctp, *new_ctp;
   iofunc_attr_t my_attr_t;
@@ -34,10 +37,17 @@ int main(void) {
     perror("ディスパッチ構造体の生成に失敗しました。\n");
     return 0;
   }
+  //解像度変更用
+  iofunc_attr_t my_attr_t_kaizoudo;
+  resmgr_connect_funcs_t my_connect_functions_kaizoudo;
+  resmgr_io_funcs_t my_io_functions_kaizoudo;
+
   // resmgr_connect_funcs_t構造体とresmgr_io_funcs_t構造体の初期化
 
   iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &my_connect_functions,
                    _RESMGR_IO_NFUNCS, &my_io_functions);
+  iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &my_connect_functions_kaizoudo,
+                   _RESMGR_IO_NFUNCS, &my_io_functions_kaizoudo);
   // open,read,write,devctlの設定
   //関数ポインタを渡す
   my_connect_functions.open = io_open;
@@ -45,16 +55,29 @@ int main(void) {
   my_io_functions.write = io_write;
   my_io_functions.devctl = io_devctl;
 
+  my_io_functions_kaizoudo.write = io_write_kaizoudo;
+
   // iofunc_attr_t構造体の初期化
 
   iofunc_attr_init(&my_attr_t, S_IFCHR | 0666, NULL, NULL);
+  iofunc_attr_init(&my_attr_t_kaizoudo, S_IFCHR | 0666, NULL, NULL);
   /// dev/mynullのアタッチ
-  int id = resmgr_attach(dpp, NULL, "/dev/Camera", _FTYPE_ANY, 0,
+  int id = resmgr_attach(dpp, NULL, "/dev/Camera/satsuei", _FTYPE_ANY, 0,
                          &my_connect_functions, &my_io_functions, &my_attr_t);
   if (id == -1) {
     perror("/dev/mynullのアタッチに失敗しました。\n");
     return 0;
   }
+
+  int id_kaizoudo =
+      resmgr_attach(dpp, NULL, "/dev/Camera/kaizoudo", _FTYPE_ANY, 0,
+                    &my_connect_functions_kaizoudo, &my_io_functions_kaizoudo,
+                    &my_attr_t_kaizoudo);
+  if (id_kaizoudo == -1) {
+    perror("/dev/mynullのアタッチに失敗しました。\n");
+    return 0;
+  }
+
   ctp = dispatch_context_alloc(dpp);
   //パルスの処理
   int code = pulse_attach(dpp, 0, PULSE_CODE, &my_func, NULL);
@@ -62,6 +85,7 @@ int main(void) {
     perror("パルスの処理に失敗しました。");
     return 0;
   }
+
   //カメラのセットアップ
   fd_spi = spi_open("/dev/spi0");
   if (fd_spi == -1) {
@@ -191,6 +215,91 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb) {
 
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb) {
   return ENOSYS;
+}
+int io_write_kaizoudo(resmgr_context_t *ctp, io_write_t *msg,
+                      RESMGR_OCB_T *ocb) {
+  int status;
+  if ((status = iofunc_write_verify(ctp, msg, ocb, NULL)) != EOK) {
+    return status;
+  }
+  if ((msg->i.xtype & _IO_XTYPE_MASK) != _IO_XTYPE_NONE) {
+    return ENOSYS;
+  }
+
+  int yomikomi = msg->i.nbytes;
+  //yomikomiには文字列の他に何らかのものが付いているので-1する\0とかかな
+  yomikomi--;
+  const char *buf_sub = (char *)msg + sizeof(io_write_t);
+  if (strncmp(buf_sub, "160X120", yomikomi) == 0) {
+    kaizoudo = gazou_160;
+    kaizoudo_size = sizeof(gazou_160);
+    kaizoudo_now=1;
+  } else if (strncmp(buf_sub, "176X144", yomikomi) == 0) {
+    kaizoudo = gazou_176;
+    kaizoudo_size = sizeof(gazou_176);
+    kaizoudo_now=2;
+  } else if (strncmp(buf_sub, "320X240", yomikomi) == 0) {
+    kaizoudo = gazou_320;
+    kaizoudo_size = sizeof(gazou_320);
+    kaizoudo_now=3;
+  } else if (strncmp(buf_sub, "352X288", yomikomi) == 0) {
+    kaizoudo = gazou_352;
+    kaizoudo_size = sizeof(gazou_352);
+    kaizoudo_now=4;
+  } else if (strncmp(buf_sub, "640X480", yomikomi) == 0) {
+    kaizoudo = gazou_640;
+    kaizoudo_size = sizeof(gazou_640);
+    kaizoudo_now=5;
+  } else if (strncmp(buf_sub, "800X600", yomikomi) == 0) {
+    kaizoudo = gazou_800;
+    kaizoudo_size = sizeof(gazou_800);
+    kaizoudo_now=6;
+  } else if (strncmp(buf_sub, "1024X768", yomikomi) == 0) {
+    kaizoudo = gazou_1024;
+    kaizoudo_size = sizeof(gazou_1024);
+    kaizoudo_now=7;
+  } else if (strncmp(buf_sub, "1280X1024", yomikomi) == 0) {
+    kaizoudo = gazou_1280;
+    kaizoudo_size = sizeof(gazou_1280);
+    kaizoudo_now=8;
+  } else if (strncmp(buf_sub, "1600X1200", yomikomi) == 0) {
+    kaizoudo = gazou_1600;
+    kaizoudo_size = sizeof(gazou_1600);
+    kaizoudo_now=9;
+  } else {
+    printf("そのような解像度は存在しません。\n");
+  
+    return ENOSYS;
+  }
+  //カメラ再設定
+  int fd = open("/dev/i2c1", O_RDWR);
+  if (fd == -1) {
+    perror("i2c1を開くのに失敗しました。");
+    return 0;
+  }
+  uint8_t kakikomi[2];
+  // 画像のピクセルについての設定値の書き込み
+  for (int i = 0; i < kaizoudo_size / 2; i++) {
+    kakikomi[0] = kaizoudo[i][0];
+    kakikomi[1] = kaizoudo[i][1];
+    int add_er = i2c_write(fd, 0x30, kakikomi, sizeof(kakikomi));
+    if (add_er == -1) {
+      perror("書き込みに失敗しました。\n");
+      return -1;
+    }
+  }
+  close(fd);
+  //_IO_SET_WRITE_NBYTESは正しい容量を書き込まないと無限ループにはまるので戻す
+  yomikomi++;
+  _IO_SET_WRITE_NBYTES(ctp, yomikomi);
+
+  if (yomikomi > 0) { /* mark times for update */
+    ((struct _iofunc_ocb *)ocb)->attr->flags |=
+        IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
+  }
+  printf("現在の解像度は%s\n", namae[kaizoudo_now - 1]);
+
+  return _RESMGR_NPARTS(0);
 }
 int my_func(message_context_t *ctp, int code, unsigned flags, void *handle) {
   if (code == PULSE_CODE) {

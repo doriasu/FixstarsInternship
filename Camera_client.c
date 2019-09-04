@@ -96,9 +96,9 @@ int main(int argc, char *argv[]) {
     // 撮影を行い argv[i] のファイルに保存
 
     int dest_fp =
-        open(argv[i], O_WRONLY | O_CREAT | O_EXCL, S_IREAD | S_IWRITE);
+        open(argv[i], O_WRONLY | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
     if (dest_fp == -1) {
-      perror("すでに存在しているファイル名です。変更してください。\n");
+      perror("書き込みファイルを開くのに失敗しました。\n");
       return 0;
     }
     int yomikomi = 0;
