@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   printf("Trying to connect to %s: \n", destination);
   connect(dstSocket, (struct sockaddr *)&dstAddr, sizeof(dstAddr));
 
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < 10; ++i) {
     int yomikomi = 0;
     char buf[1000];
 
@@ -106,6 +106,10 @@ int main(int argc, char *argv[]) {
         printf("%d\n",yomikomi);
       }
     }
+    //画像の終端にダミーコードを送りつけておき、識別する。
+    char *dummy="xxx";
+    send(dstSocket, dummy, 3, 0);
+
   
     clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
