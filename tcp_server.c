@@ -1,13 +1,13 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<errno.h>
+#include <unistd.h>
 int main(int argc, char **argv) {
   int sd;
   int acc_sd;
@@ -52,23 +52,29 @@ int main(int argc, char **argv) {
     perror("accept");
     return -1;
   }
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 1; i++) {
     int yomikomi;
+    char *shashin = malloc(sizeof(char) * 1000000);
+    int youryou = 0;
+
     // パケット受信。パケットが到着するまでブロック
-    if ((yomikomi = recv(acc_sd, buf, buf_size, 0)) < 0) {
-      perror("recv");
-      return -1;
+    while ((yomikomi = recv(acc_sd, buf, buf_size, 0)) > 0) {
+      memcpy(shashin+youryou,buf,yomikomi);
+      youryou+=yomikomi;
     }
     char file_name[20];
     snprintf(file_name, 20, "sample_%d.jpg", i);
-    int dest_fp =
-        open(file_name, O_WRONLY | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
+    int dest_fp = open(file_name, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND,
+                       S_IREAD | S_IWRITE);
     if (dest_fp == -1) {
       perror("書き込みファイルを開くのに失敗しました。\n");
       return 0;
     }
-    while (yomikomi > 0) {
-      int kakikomi = write(dest_fp, buf, yomikomi);
+    char *buf_sub = shashin;
+    while (youryou > 0) {
+      int kakikomi = write(dest_fp, buf_sub, youryou);
+      printf("yomikomi:%d\n", yomikomi);
+      printf("kakikomi:%d\n", kakikomi);
 
       //エラー処理
       if (kakikomi == -1) {
@@ -78,8 +84,8 @@ int main(int argc, char **argv) {
           return 0;
         }
       }
-      buf += kakikomi;
-      yomikomi -= kakikomi;
+      buf_sub += kakikomi;
+      youryou -= kakikomi;
     }
     close(dest_fp);
   }

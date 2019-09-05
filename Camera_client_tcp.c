@@ -13,7 +13,7 @@
 #include "header.h"
 
 int main(int argc, char *argv[]) {
-  if(argc!=4){
+  if (argc != 4) {
     printf("引数はipアドレスとポート番号と遅延時間(ms)です\n");
     return 0;
   }
@@ -22,10 +22,10 @@ int main(int argc, char *argv[]) {
   long interval_ms;
   char *endptr;
   interval_ms = strtoul(argv[3], &endptr, 10);
-        if (*endptr != '\0') {
-          perror("不正な文字が入力されています。数字msです。\n");
-          return 0;
-        }
+  if (*endptr != '\0') {
+    perror("不正な文字が入力されています。数字msです。\n");
+    return 0;
+  }
 
   if (interval_ms > 999) {
     int ms = interval_ms % 1000;
@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in dstAddr;
   printf("HEHE\n");
 
-
   /* sockaddr_in 構造体のセット */
   memset(&dstAddr, 0, sizeof(dstAddr));
   dstAddr.sin_port = htons(port);
@@ -72,15 +71,13 @@ int main(int argc, char *argv[]) {
   printf("Trying to connect to %s: \n", destination);
   connect(dstSocket, (struct sockaddr *)&dstAddr, sizeof(dstAddr));
 
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 1; ++i) {
     int yomikomi = 0;
-    char buf[100000];
-    int yomikomi_tmp;
+    char buf[1000];
 
     //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
     while ((yomikomi = read(fd, buf, sizeof(buf))) != 0) {
-      yomikomi_tmp = yomikomi;
       if (yomikomi == -1) {
         if (errno == EINTR) {
         } else {
@@ -89,8 +86,27 @@ int main(int argc, char *argv[]) {
         }
       }
       printf("%d\n", yomikomi);
+
+      char *buf_sub = buf;
+
+      while (yomikomi > 0) {
+        int kakikomi = send(dstSocket, buf, yomikomi, 0);
+
+        //エラー処理
+        if (kakikomi == -1) {
+          if (errno == EINTR) {
+          } else {
+            perror("ファイルの書き込みに失敗しました。\n");
+           
+            return 0;
+          }
+        }
+        buf_sub += kakikomi;
+        yomikomi -= kakikomi;
+        printf("%d\n",yomikomi);
+      }
     }
-    send(dstSocket, buf, yomikomi_tmp , 0);
+  
     clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
   }
