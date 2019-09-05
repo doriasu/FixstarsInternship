@@ -85,13 +85,12 @@ int main(int argc, char *argv[]) {
         if (errno == EINTR) {
         } else {
           perror("ファイルの読み込みに失敗しました。\n");
-          unlink(argv[i]);
           return 0;
         }
       }
       printf("%d\n", yomikomi);
     }
-    send(dstSocket, buf, yomikomi_tmp + 1, 0);
+    send(dstSocket, buf, yomikomi_tmp , 0);
     clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
   }

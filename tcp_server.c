@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
   socklen_t sin_size = sizeof(struct sockaddr_in);
   struct sockaddr_in from_addr;
 
-  char *buf = malloc(sizeof(char) * 100000);
-  int buf_size = 100000;
+  char *buf = malloc(sizeof(char) * 1000000);
+  int buf_size = 1000000;
 
   // 受信バッファの初期化
   memset(buf, 0, buf_size);
@@ -75,13 +75,13 @@ int main(int argc, char **argv) {
         if (errno == EINTR) {
         } else {
           perror("ファイルの書き込みに失敗しました。\n");
-          unlink(argv[i]);
           return 0;
         }
       }
       buf += kakikomi;
       yomikomi -= kakikomi;
     }
+    close(dest_fp);
   }
 
   // パケット送受信用ソケットのクローズ
