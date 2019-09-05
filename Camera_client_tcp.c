@@ -13,9 +13,19 @@
 #include "header.h"
 
 int main(int argc, char *argv[]) {
+  if(argc!=4){
+    printf("引数はipアドレスとポート番号と遅延時間(ms)です\n");
+    return 0;
+  }
   struct timespec timer;
   const char *camera = "/dev/Camera/satsuei";
-  long interval_ms = 1000;
+  long interval_ms;
+  char *endptr;
+  interval_ms = strtoul(argv[3], &endptr, 10);
+        if (*endptr != '\0') {
+          perror("不正な文字が入力されています。数字msです。\n");
+          return 0;
+        }
 
   if (interval_ms > 999) {
     int ms = interval_ms % 1000;
@@ -48,7 +58,6 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in dstAddr;
   printf("HEHE\n");
 
-  char *toSendText = "This is a test";
 
   /* sockaddr_in 構造体のセット */
   memset(&dstAddr, 0, sizeof(dstAddr));
@@ -83,7 +92,7 @@ int main(int argc, char *argv[]) {
       printf("%d\n", yomikomi);
     }
     send(dstSocket, buf, yomikomi_tmp + 1, 0);
-    //clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
+    clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
   }
 
