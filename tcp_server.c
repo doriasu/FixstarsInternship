@@ -85,7 +85,6 @@ int main(int argc, char **argv) {
       printf("%c",shashin[i]);
     }
     //うまく動けば勝ちなのはこいつ
-    youryou_sub++;
     while (start != youryou_sub) {
       char file_name[20];
       snprintf(file_name, 20, "sample_%d.jpg", k);
@@ -113,15 +112,17 @@ int main(int argc, char **argv) {
       start = end + 3;
       if (start != youryou_sub) {
         int x=end;
-        for (int i=end; i < youryou_sub - 2; i++) {
-          if (buf_sub[i] == 'x' && buf_sub[i + 1] == 'x' &&
-              buf_sub[i + 2] == 'x') {
+        for (int i=start; i < youryou_sub - 2; i++) {
+          if (shashin[i] == 'x' && shashin[i + 1] == 'x' &&
+              shashin[i + 2] == 'x') {
+                printf("hello\n");
             end=i;
             break;
           }
         }
         if(x==end){
           end=youryou_sub-3;
+          break;
         }
         buf_sub+=3;
       }else{

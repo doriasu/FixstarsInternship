@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   printf("Trying to connect to %s: \n", destination);
   connect(dstSocket, (struct sockaddr *)&dstAddr, sizeof(dstAddr));
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 5; ++i) {
     int yomikomi = 0;
     char buf[1000];
 
