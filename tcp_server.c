@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
   // 待ち受けるIPとポート番号を設定
   addr.sin_family = AF_INET;
-  addr.sin_port = htons(50000);
+  addr.sin_port = htons(50001);
   addr.sin_addr.s_addr = INADDR_ANY;
 
   // バインドする
@@ -63,14 +63,7 @@ int main(int argc, char **argv) {
       youryou += yomikomi;
     }
     int youryou_sub = youryou;
-    /*char file_name[20];
-    snprintf(file_name, 20, "sample_%d.jpg", i);
-    int dest_fp = open(file_name, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND,
-                       S_IREAD | S_IWRITE);
-    if (dest_fp == -1) {
-      perror("書き込みファイルを開くのに失敗しました。\n");
-      return 0;
-    }*/
+
     char *buf_sub = shashin;
     int start = 0;
     int end = 0;
@@ -81,9 +74,7 @@ int main(int argc, char **argv) {
       }
     }
     int k = 0;
-    for(int i=0;i<youryou_sub;i++){
-      printf("%c",shashin[i]);
-    }
+
     //うまく動けば勝ちなのはこいつ
     while (start != youryou_sub) {
       char file_name[20];
@@ -111,45 +102,33 @@ int main(int argc, char **argv) {
       }
       start = end + 3;
       if (start != youryou_sub) {
-        int x=end;
-        for (int i=start; i < youryou_sub - 2; i++) {
+        int x = end;
+        for (int i = start; i < youryou_sub - 2; i++) {
           if (shashin[i] == 'x' && shashin[i + 1] == 'x' &&
               shashin[i + 2] == 'x') {
-                printf("hello\n");
-            end=i;
+            printf("hello\n");
+            end = i;
             break;
           }
         }
-        if(x==end){
-          end=youryou_sub-3;
+        if (x == end) {
+          end = youryou_sub - 3;
           break;
         }
-        buf_sub+=3;
-      }else{
+        buf_sub += 3;
+      } else {
         break;
       }
       close(dest_fp);
-      printf("start:%d end:%d youryou:%d\n",start,end,youryou_sub);
-
+      printf("start:%d end:%d youryou:%d\n", start, end, youryou_sub);
     }
-    /*while (youryou > 0) {
-      int kakikomi = write(dest_fp, buf_sub, youryou);
-      printf("yomikomi:%d\n", yomikomi);
-      printf("kakikomi:%d\n", kakikomi);
-
-      //エラー処理
-      if (kakikomi == -1) {
-        if (errno == EINTR) {
-        } else {
-          perror("ファイルの書き込みに失敗しました。\n");
-          return 0;
-        }
-      }
-      buf_sub += kakikomi;
-      youryou -= kakikomi;
+    /*
+    int code[2]={10,10};
+    int send_err=send(acc_sd,code,sizeof(code),0);
+    if(send_err<0){
+      perror("受信終了コード送信に失敗しました。\n");
+      return 0;
     }*/
-
-    
   }
 
   // パケット送受信用ソケットのクローズ

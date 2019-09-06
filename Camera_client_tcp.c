@@ -97,23 +97,30 @@ int main(int argc, char *argv[]) {
           if (errno == EINTR) {
           } else {
             perror("ファイルの書き込みに失敗しました。\n");
-           
+
             return 0;
           }
         }
         buf_sub += kakikomi;
         yomikomi -= kakikomi;
-        printf("%d\n",yomikomi);
+        printf("%d\n", yomikomi);
       }
     }
     //画像の終端にダミーコードを送りつけておき、識別する。
-    char *dummy="xxx";
+    char *dummy = "xxx";
     send(dstSocket, dummy, 3, 0);
 
-  
     clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
-  }
+  } /*
+   int code[2];
+   int rcv_err=recv(dstSocket,code,sizeof(code),0);
+   if(rcv_err<0){
+     perror("受信完了コード受信に失敗しました。\n");
+     return 0;
+   }else if(code[0]==10&&code[1]==10){
+     printf("受信完了したみたいですね。\n");
+   }*/
 
   close(fd);
   return 0;
