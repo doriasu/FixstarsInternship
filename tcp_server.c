@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include<time.h>
 int main(int argc, char **argv) {
   int sd;
   int acc_sd;
@@ -16,8 +17,8 @@ int main(int argc, char **argv) {
   socklen_t sin_size = sizeof(struct sockaddr_in);
   struct sockaddr_in from_addr;
 
-  char *buf = malloc(sizeof(char) * 10000000);
-  int buf_size = 10000000;
+  char *buf = malloc(sizeof(char) * 1000000);
+  int buf_size = 1000000;
 
   // 受信バッファの初期化
   memset(buf, 0, buf_size);
@@ -52,15 +53,17 @@ int main(int argc, char **argv) {
     perror("accept");
     return -1;
   }
-  for (int i = 0; i < 1; i++) {
+  for (;;) {
     int yomikomi;
-    char *shashin = malloc(sizeof(char) * 10000000);
+    char *shashin = malloc(sizeof(char) * 1000000);
     int youryou = 0;
+    buf_size=1000000;
 
     // パケット受信。パケットが到着するまでブロック
     while ((yomikomi = recv(acc_sd, buf, buf_size, 0)) > 0) {
       memcpy(shashin + youryou, buf, yomikomi);
       youryou += yomikomi;
+      buf_size-=yomikomi;
     }
     int youryou_sub = youryou;
 
@@ -86,6 +89,7 @@ int main(int argc, char **argv) {
         return 0;
       }
       k++;
+      
       int yomikomi = end - start;
       while (yomikomi > 0) {
         int kakikomi = write(dest_fp, buf_sub, yomikomi);
@@ -122,13 +126,9 @@ int main(int argc, char **argv) {
       close(dest_fp);
       printf("start:%d end:%d youryou:%d\n", start, end, youryou_sub);
     }
-    /*
-    int code[2]={10,10};
-    int send_err=send(acc_sd,code,sizeof(code),0);
-    if(send_err<0){
-      perror("受信終了コード送信に失敗しました。\n");
-      return 0;
-    }*/
+    
+
+   
   }
 
   // パケット送受信用ソケットのクローズ

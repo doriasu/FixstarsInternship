@@ -71,9 +71,9 @@ int main(int argc, char *argv[]) {
   printf("Trying to connect to %s: \n", destination);
   connect(dstSocket, (struct sockaddr *)&dstAddr, sizeof(dstAddr));
 
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     int yomikomi = 0;
-    char buf[1000];
+    char buf[10000];
 
     //読み込み0になる問題
     // while(c>0){if(c==-1)}はc==-1が常に偽になってしまうため修正した(注意)
@@ -112,15 +112,8 @@ int main(int argc, char *argv[]) {
 
     clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, NULL);
     // 次の撮影があるなら interval_ms だけ待機する
-  } /*
-   int code[2];
-   int rcv_err=recv(dstSocket,code,sizeof(code),0);
-   if(rcv_err<0){
-     perror("受信完了コード受信に失敗しました。\n");
-     return 0;
-   }else if(code[0]==10&&code[1]==10){
-     printf("受信完了したみたいですね。\n");
-   }*/
+  } 
+  
 
   close(fd);
   return 0;
