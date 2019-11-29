@@ -1,0 +1,2 @@
+# Fixstars summer internship2019
+2019年下記に行われたFixstars internshipにて制作したbeaglebone上で動作する組み込みOSであるQNXむけのカメラドライバです。
